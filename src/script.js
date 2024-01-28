@@ -23,6 +23,9 @@ import fragmentShader from './shaders/fragments.glsl'
 import vertexGlowShader from './shaders/glow/vertex.glsl'
 import fragmentGlowShader from './shaders/glow/fragments.glsl'
 
+import SkyFromSpaceVertex from './shaders/atmo/SkyFromSpace.vert'
+import SkyFromSpaceFragment from './shaders/atmo/SkyFromSpace.frag'
+
 /**
  * Debug
  */
@@ -157,49 +160,129 @@ const earthTexture = {
         console.log("Loaded earth roughness texture")
         console.log(texture)
     }),
+    nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
+        console.log("Loaded earth nightlights texture")
+    }),
 }
 earthTexture.color.colorSpace = THREE.SRGBColorSpace
-
-/**
- * Glow
- */
-var customMaterial = new THREE.ShaderMaterial({
-    uniforms:
-    {
-        "c": { type: "f", value: 1.0 },
-        "p": { type: "f", value: 1.4 },
-        "s": { type: "f", value: 1.0 },
-        scale: { type: "f", value: 1.0 },
-        glowColor: { type: "c", value: new THREE.Color(0x99c1f1) },
-        viewVector: { type: "v3", value: camera.position },
-        uCameraPosition: {value: camera.position },
-    },
-    vertexShader: vertexGlowShader,
-    fragmentShader: fragmentGlowShader, 
-    side: THREE.FrontSide,
-    blending: THREE.AdditiveBlending,
-    transparent: true
-});
-const glow = new THREE.Mesh(new THREE.SphereGeometry(1.0, 30, 30), customMaterial);
-glow.scale.multiplyScalar(1.02);
-// scene.add(glow);
-
-const glowFolder = gui.addFolder('Glow')
-glowFolder.addColor(customMaterial.uniforms.glowColor, 'value').name('Glow Color')
-glowFolder.add(customMaterial.uniforms.c, 'value').name('Glow C').min(0).max(10).step(0.01)
-glowFolder.add(customMaterial.uniforms.p, 'value').name('Glow P').min(0).max(30).step(0.01)
-glowFolder.add(customMaterial.uniforms.s, 'value').name('Glow Shift').min(-30).max(30).step(0.01)
-glowFolder.add(customMaterial.uniforms.scale, 'value').name('Glow Scale').min(0).max(30).step(0.01)
-glowFolder.add(glow, 'visible').name('Atmo Visible')
-glowFolder.add(glow.scale, 'x').name('Atmo Scale').min(1).max(1.2).step(0.01).onChange(() => {
-    glow.scale.y = glow.scale.x
-    glow.scale.z = glow.scale.x
-})
 
 
 /**
  * Earth 
  */
+
+const atmosphere = {
+	Kr				: 0.0025,
+	Km				: 0.0010,
+	ESun			: 20.0,
+	g				: -0.950,
+	innerRadius 	: 100,
+	outerRadius		: 102.5,
+	wavelength		: [0.650, 0.570, 0.475],
+	scaleDepth		: 0.25,
+	mieScaleDepth	: 0.1,
+}
+const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+earthTexture.color.anisotropy = maxAnisotropy;
+earthTexture.nightlights.anisotropy = maxAnisotropy;
+const uniforms = {
+	v3LightPosition: {
+		type:	"v3",
+		value:	new THREE.Vector3(1e8, 0, 1e8).normalize(),
+    },
+	v3InvWavelength: {
+		type:	"v3",
+		value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)),
+    },
+	fCameraHeight: {
+		type:	"f",
+		value:	0,
+    },
+	fCameraHeight2: {
+		type:	"f",
+		value:	0,
+    },
+	fInnerRadius: {
+		type:	"f",
+		value:	atmosphere.innerRadius,
+    },
+	fInnerRadius2: {
+		type:	"f",
+		value:	atmosphere.innerRadius * atmosphere.innerRadius,
+    },
+	fOuterRadius: {
+		type:	"f",
+		value:	atmosphere.outerRadius,
+    },
+	fOuterRadius2: {
+		type:	"f",
+		value:	atmosphere.outerRadius * atmosphere.outerRadius,
+    },
+	fKrESun: {
+		type:	"f",
+		value:	atmosphere.Kr * atmosphere.ESun,
+    },
+	fKmESun: {
+		type:	"f",
+		value:	atmosphere.Km * atmosphere.ESun,
+    },
+	fKr4PI: {
+		type:	"f",
+		value:	atmosphere.Kr * 4.0 * Math.PI,
+    },
+	fKm4PI: {
+		type:	"f",
+		value:	atmosphere.Km * 4.0 * Math.PI,
+    },
+	fScale: {
+		type:	"f",
+		value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius),
+    },
+	fScaleDepth: {
+		type:	"f",
+		value:	atmosphere.scaleDepth,
+    },
+	fScaleOverScaleDepth: {
+		type:	"f",
+		value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius) / atmosphere.scaleDepth,
+    },
+	g: {
+		type:	"f",
+		value:	atmosphere.g,
+    },
+	g2: {
+		type:	"f",
+		value:	atmosphere.g * atmosphere.g,
+    },
+	nSamples: {
+		type:	"i",
+		value:	3,
+    },
+	fSamples: {
+		type:	"f",
+		value:	3.0,
+    },
+	tDiffuse: {
+		type:	"t",
+		value:	earthTexture.color,
+    },
+	tDiffuseNight: {
+		type:	"t",
+		value:	earthTexture.nightlights,
+    },
+	tDisplacement: {
+		type:	"t",
+		value:	0,
+    },
+	tSkyboxDiffuse: {
+		type:	"t",
+		value:	0,
+    },
+	fNightScale: {
+		type:	"f",
+		value:	1,
+    }
+}
 
 // Material
 const earthMaterial = new THREE.MeshStandardMaterial()
@@ -215,8 +298,8 @@ earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
 earthMaterial.roughness = 1.0
 const earthMesh = new THREE.Mesh(
     new THREE.SphereGeometry(1.0, 256, 256),
-    // earthMaterial,
-    new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+    earthMaterial,
+    // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
 )
 scene.add(earthMesh)
 
@@ -235,73 +318,6 @@ gui.add(axesHelper, 'visible').name('Axes Helper')
 /**
  * Postprocessing
  */
-const params = {
-    outlineColor: '0x000000',
-    outlineMaxDistance: 10.0,
-    outlineMinDistance: 0.5,
-    outlineMax: 1.2,
-    outlineMin: 0.3,
-    outlineGlow: 5.0,
-    outlineThickness: 5.0,
-    outlineDecay: 1.0,
-
-    bloomThreshold: 0.5,
-    bloomStrength: 1.5,
-    bloomRadius: 0.4,
-}
-
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const outlinePass = new OutlinePass(new THREE.Vector2(sizes.width, sizes.height), scene, camera);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(sizes.width, sizes.height), 
-    params.bloomStrength, params.bloomRadius, params.bloomThreshold);
-composer.addPass(outlinePass);
-composer.addPass(bloomPass);
-composer.addPass(new OutputPass());
-// composer.addPass(new EffectPass(camera, new BloomEffect()));
-
-// Outline 
-function updateOutline() {
-    const strength = Math.max(params.outlineMax - camera.position.distanceTo(earthMesh.position) * params.outlineDecay, params.outlineMin)
-    const dmax = params.outlineMaxDistance
-    const dmin = params.outlineMinDistance
-    const d = camera.position.distanceTo(earthMesh.position)
-    let theta = (d - dmin) / (dmax - dmin)
-    theta = Math.max(Math.min(theta, 1.0), 0.0)
-
-    const smax = params.outlineMax
-    const smin = params.outlineMin
-    const s = smax - (smax - smin) * theta
-    console.log("Strength: ", s, " Theta: ", theta)
-    outlinePass.edgeStrength = s 
-    outlinePass.edgeGlow = params.outlineGlow
-    outlinePass.edgeThickness = params.outlineThickness
-}
-outlinePass.selectedObjects = [earthMesh];
-const outlineFolder = gui.addFolder('Outline')
-outlineFolder.add(outlinePass, 'enabled').name('Outline Enabled')
-outlineFolder.add(params, 'outlineMaxDistance').name('Outline Max Distance').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineMinDistance').name('Outline Min Distance').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineMax').name('Outline Max').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineMin').name('Outline Min').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineDecay').name('Outline Decay').min(0).max(5).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineGlow').name('Outline Glow').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.add(params, 'outlineThickness').name('Outline Thickness').min(0).max(10).step(0.01).onChange(updateOutline)
-outlineFolder.addColor(params, 'outlineColor').name('Outline Color').onChange(() => {
-    outlinePass.visibleEdgeColor.set(params.outlineColor)
-})
-
-// Bloom
-function updateBloom() {
-    bloomPass.strength = params.bloomStrength
-    bloomPass.radius = params.bloomRadius
-    bloomPass.threshold = params.bloomThreshold
-}
-const bloomFolder = gui.addFolder('Bloom')
-bloomFolder.add(bloomPass, 'enabled').name('Bloom Enabled')
-bloomFolder.add(params, 'bloomStrength').name('Bloom Strength').min(0).max(10).step(0.01).onChange(updateBloom)
-bloomFolder.add(params, 'bloomRadius').name('Bloom Radius').min(0).max(10).step(0.01).onChange(updateBloom)
-bloomFolder.add(params, 'bloomThreshold').name('Bloom Threshold').min(0).max(10).step(0.01).onChange(updateBloom)
 
 
 /**
@@ -330,19 +346,19 @@ const tick = () => {
 
     // shaderMaterial.uniforms.uViewVector.value = new THREE.Vector3().subVectors(camera.position, earthMesh.position)
     // console.log(camera.position)
-    glow.material.uniforms.viewVector.value = new THREE.Vector3().subVectors(camera.position, glow.position)
-    glow.material.uniforms.uCameraPosition.value = camera.position
+    // glow.material.uniforms.viewVector.value = new THREE.Vector3().subVectors(camera.position, glow.position)
+    // glow.material.uniforms.uCameraPosition.value = camera.position
 
     // Update controls
-    const cameraDistance = camera.position.distanceTo(earthMesh.position)
-    console.log(cameraDistance)
-    updateOutline()
+    // const cameraDistance = camera.position.distanceTo(earthMesh.position)
+    // console.log(cameraDistance)
+    // updateOutline()
     controls.update()
     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
 
     // Render
-    // renderer.render(scene, camera)
-    composer.render()
+    renderer.render(scene, camera)
+    // composer.render()
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
