@@ -23,8 +23,8 @@ uniform float fScale;			// 1 / (fOuterRadius - fInnerRadius)
 uniform float fScaleDepth;		// The scale depth (i.e. the altitude at which the atmosphere's average density is found)
 uniform float fScaleOverScaleDepth;	// fScale / fScaleDepth
 
-const int nSamples = 1;
-const float fSamples = 1.0;
+const int nSamples = 5;
+const float fSamples = 5.0;
 
 varying vec3 v3Direction;
 varying vec3 c0;
@@ -84,7 +84,7 @@ void main(void)
 		fDepth = exp(fScaleOverScaleDepth * (fInnerRadius - fHeight));
 		fLightAngle = dot(v3LightPosition, v3SamplePoint) / fHeight;
 		fCameraAngle = dot(v3Ray, v3SamplePoint) / fHeight;
-		fScatter = (0.0*fStartOffset + fDepth*(scale(fLightAngle) - scale(fCameraAngle)));
+		fScatter = (fStartOffset + fDepth*(scale(fLightAngle) - scale(fCameraAngle)));
 		vec3 v3Attenuate = exp(-fScatter * (v3InvWavelength * fKr4PI + fKm4PI));
 		v3FrontColor += v3Attenuate * (fDepth * fScaledLength);
 		v3SamplePoint += v3SampleRay;
