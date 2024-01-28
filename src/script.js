@@ -25,6 +25,8 @@ import fragmentGlowShader from './shaders/glow/fragments.glsl'
 
 import SkyFromSpaceVertex from './shaders/atmo/SkyFromSpace.vert'
 import SkyFromSpaceFragment from './shaders/atmo/SkyFromSpace.frag'
+import GroundFromSpaceVertex from './shaders/atmo/GroundFromSpace.vert'
+import GroundFromSpaceFragment from './shaders/atmo/GroundFromSpace.frag'
 
 /**
  * Debug
@@ -313,7 +315,21 @@ const earthMesh = new THREE.Mesh(
     // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
 )
 scene.add(earthMesh)
+earthMesh.visible = false
 gui.add(earthMesh, 'visible').name('Earth')
+
+// Ground 
+const groundMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: GroundFromSpaceVertex,
+    fragmentShader: GroundFromSpaceFragment,
+})
+const groundMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(atmosphere.innerRadius, 256, 256),
+    groundMaterial,
+)
+scene.add(groundMesh)
+gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
 const skyMaterial = new THREE.ShaderMaterial({

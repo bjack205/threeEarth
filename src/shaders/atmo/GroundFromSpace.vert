@@ -6,7 +6,7 @@
 // Copyright (c) 2004 Sean O'Neil
 //
 
-uniform vec3 v3CameraPos;		// The camera's current position
+// uniform vec3 v3CameraPos;		// The camera's current position
 uniform vec3 v3LightPos;		// The direction vector to the light source
 uniform vec3 v3InvWavelength;	// 1 / pow(wavelength, 4) for the red, green, and blue channels
 uniform float fCameraHeight;	// The camera's current height
@@ -23,8 +23,8 @@ uniform float fScale;			// 1 / (fOuterRadius - fInnerRadius)
 uniform float fScaleDepth;		// The scale depth (i.e. the altitude at which the atmosphere's average density is found)
 uniform float fScaleOverScaleDepth;	// fScale / fScaleDepth
 
-const int nSamples = 2;
-const float fSamples = 2.0;
+const int nSamples = 3;
+const float fSamples = 3.0;
 
 
 float scale(float fCos)
@@ -36,19 +36,19 @@ float scale(float fCos)
 void main(void)
 {
 	// Get the ray from the camera to the vertex and its length (which is the far point of the ray passing through the atmosphere)
-	vec3 v3Pos = gl_Vertex.xyz;
-	vec3 v3Ray = v3Pos - v3CameraPos;
+	vec3 v3Pos = position;   // gl_Vertex.xyz;
+	vec3 v3Ray = v3Pos - cameraPosition;
 	float fFar = length(v3Ray);
 	v3Ray /= fFar;
 
 	// Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere)
-	float B = 2.0 * dot(v3CameraPos, v3Ray);
+	float B = 2.0 * dot(cameraPosition, v3Ray);
 	float C = fCameraHeight2 - fOuterRadius2;
 	float fDet = max(0.0, B*B - 4.0 * C);
 	float fNear = 0.5 * (-B - sqrt(fDet));
 
 	// Calculate the ray's starting position, then calculate its scattering offset
-	vec3 v3Start = v3CameraPos + v3Ray * fNear;
+	vec3 v3Start = cameraPosition + v3Ray * fNear;
 	fFar -= fNear;
 	float fDepth = exp((fInnerRadius - fOuterRadius) / fScaleDepth);
 	float fCameraAngle = dot(-v3Ray, v3Pos) / length(v3Pos);
