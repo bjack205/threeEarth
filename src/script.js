@@ -61,7 +61,7 @@ window.addEventListener('resize', () => {
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    composer.setSize(sizes.width, sizes.height)
+    // composer.setSize(sizes.width, sizes.height)
 })
 
 /**
@@ -84,10 +84,10 @@ bloomLayer.set( BLOOM_SCENE );
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 1
-camera.position.y = 1
-camera.position.z = 2
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
+camera.position.x = 0 
+camera.position.y = 0 
+camera.position.z = 180 
 scene.add(camera)
 
 
@@ -98,7 +98,7 @@ scene.add(camera)
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.0)
 const pointLight = new THREE.PointLight(0xffffff, 30.0)
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
-directionalLight.position.set(1, 0, 1)
+directionalLight.position.set(100, 0, .0)
 directionalLight.castShadow = true
 pointLight.position.set(2, 3, 4)
 scene.add(ambientLight)
@@ -185,6 +185,17 @@ const atmosphere = {
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 earthTexture.color.anisotropy = maxAnisotropy;
 earthTexture.nightlights.anisotropy = maxAnisotropy;
+
+const atmoFolder = gui.addFolder('Atmosphere')
+atmoFolder.add(atmosphere, 'Kr').min(0).max(1.0).step(0.0001)
+atmoFolder.add(atmosphere, 'Km').min(0).max(1.0).step(0.0001)
+atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1)
+atmoFolder.add(atmosphere, 'g').min(-1).max(1).step(0.001)
+atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1)
+atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1)
+atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
+atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
+
 const uniforms = {
 	v3LightPosition: {
 		type:	"v3",
@@ -297,13 +308,30 @@ earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
 // Geometry 
 earthMaterial.roughness = 1.0
 const earthMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(1.0, 256, 256),
+    new THREE.SphereGeometry(atmosphere.innerRadius, 256, 256),
     earthMaterial,
     // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
 )
 scene.add(earthMesh)
-
 gui.add(earthMesh, 'visible').name('Earth')
+
+// Atmosphere
+const skyMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: SkyFromSpaceVertex,
+    fragmentShader: SkyFromSpaceFragment,
+    side: THREE.BackSide,
+    vertexColors: true,
+    transparent: true,
+})
+
+const skyMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
+    skyMaterial,
+)
+scene.add(skyMesh)
+gui.add(skyMesh, 'visible').name('Sky')
+
 // earthMesh.castShadow = true
 // earthMesh.receiveShadow = true
 // const earthFolder = gui.addFolder('Earth')
@@ -355,6 +383,16 @@ const tick = () => {
     // updateOutline()
     controls.update()
     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
+
+    const cameraHeight = camera.position.length()
+    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, earthMesh.position).normalize()
+    const scale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius)
+    skyMesh.material.uniforms.v3LightPosition.value = lightDir 
+    skyMesh.material.uniforms.fCameraHeight.value = cameraHeight 
+    skyMesh.material.uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
+    skyMesh.material.uniforms.fScale.value = scale
+    skyMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
+
 
     // Render
     renderer.render(scene, camera)
