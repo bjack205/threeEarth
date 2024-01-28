@@ -1,0 +1,9 @@
+static/textures/earth/earth_landocean_4K.png filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/earth_nightlights_10K.tif filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/earth_roughness.png filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/earth_roughness.tif filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/specular_map[[:space:]]8k.tif filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/topography_21k.png filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/topography_5k.png filter=lfs diff=lfs merge=lfs -text
+static/textures/earth/earth_color_10K.tif filter=lfs diff=lfs merge=lfs -text
+static/textures/environmentMap/2k.hdr filter=lfs diff=lfs merge=lfs -text
