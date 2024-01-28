@@ -22,6 +22,14 @@ uniform float fKm4PI;			// Km * 4 * PI
 uniform float fScale;			// 1 / (fOuterRadius - fInnerRadius)
 uniform float fScaleDepth;		// The scale depth (i.e. the altitude at which the atmosphere's average density is found)
 uniform float fScaleOverScaleDepth;	// fScale / fScaleDepth
+uniform sampler2D tDiffuse;  // added
+
+// Added
+varying vec3 v3Direction;
+varying vec3 c0;
+varying vec3 c1;
+varying vec3 vNormal;
+varying vec3 vUv;
 
 const int nSamples = 3;
 const float fSamples = 3.0;
@@ -48,7 +56,7 @@ void main(void)
 	float fNear = 0.5 * (-B - sqrt(fDet));
 
 	// Calculate the ray's starting position, then calculate its scattering offset
-	vec3 v3Start = cameraPosition + v3Ray * fNear;
+	vec3 v3Start = cameraPosition + v3Ray * fNear;  // use threejs cameraPosition
 	fFar -= fNear;
 	float fDepth = exp((fInnerRadius - fOuterRadius) / fScaleDepth);
 	float fCameraAngle = dot(-v3Ray, v3Pos) / length(v3Pos);
@@ -77,12 +85,17 @@ void main(void)
 		v3SamplePoint += v3SampleRay;
 	}
 
-	gl_FrontColor.rgb = v3FrontColor * (v3InvWavelength * fKrESun + fKmESun);
+	// gl_FrontColor.rgb = v3FrontColor * (v3InvWavelength * fKrESun + fKmESun);
 
 	// Calculate the attenuation factor for the ground
-	gl_FrontSecondaryColor.rgb = v3Attenuate;
+	// gl_FrontSecondaryColor.rgb = v3Attenuate;
+	c0 = v3Attenuate;
+	c1 = v3FrontColor * (v3InvWavelength * fKrESun + fKmESun);
 
-	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	gl_TexCoord[1] = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+	// gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	// gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	// gl_TexCoord[1] = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // modified
+	vUv = uv;          // added
+	vNormal = normal;  // added
 }
