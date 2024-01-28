@@ -127,11 +127,11 @@ gui.add(directionalLight, 'castShadow').name('Sun Shadow')
 // })
 
 const exrLoader = new EXRLoader()
-exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
-    envMap.mapping = THREE.EquirectangularReflectionMapping
-    scene.background = envMap
-    scene.environment = envMap
-})
+// exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
+//     envMap.mapping = THREE.EquirectangularReflectionMapping
+//     scene.background = envMap
+//     scene.environment = envMap
+// })
 
 // const rgbeLoader = new RGBELoader()
 // rgbeLoader.load("./textures/environmentMap/2k.hdr", (envMap) => {
@@ -148,21 +148,28 @@ const textureLoader = new THREE.TextureLoader()
 
 const tiffLoader = new TIFFLoader()
 const earthTexture = {
-    color: tiffLoader.load('/textures/earth/earth_color_10K.tif', (texture) => {
+    // color: tiffLoader.load('/textures/earth/earth_color_10K.tif', (texture) => {
+    //     texture.colorSpace = THREE.SRGBColorSpace
+    //     console.log("Loaded earth color texture")
+    // }),
+    color: textureLoader.load('/textures/earth/earth_color_small.jpg', (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace
         console.log("Loaded earth color texture")
     }),
-    displacement: textureLoader.load('/textures/earth/topography_21k.png', (texture) => {
-        console.log("Loaded earth displacement texture")
-    }),
-    landocean: textureLoader.load('/textures/earth/earth_landocean_4K.png', (texture) => {
-        console.log("Loaded earth landocean texture")
-    }),
-    roughness: textureLoader.load('/textures/earth/earth_roughness.png', (texture) => {
-        console.log("Loaded earth roughness texture")
-        console.log(texture)
-    }),
-    nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
+    // displacement: textureLoader.load('/textures/earth/topography_21k.png', (texture) => {
+    //     console.log("Loaded earth displacement texture")
+    // }),
+    // landocean: textureLoader.load('/textures/earth/earth_landocean_4K.png', (texture) => {
+    //     console.log("Loaded earth landocean texture")
+    // }),
+    // roughness: textureLoader.load('/textures/earth/earth_roughness.png', (texture) => {
+    //     console.log("Loaded earth roughness texture")
+    //     console.log(texture)
+    // }),
+    // nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
+    //     console.log("Loaded earth nightlights texture")
+    // }),
+    nightlights: textureLoader.load('/textures/earth/earth_nightlights_small.jpg', (texture) => {
         console.log("Loaded earth nightlights texture")
     }),
 }
@@ -299,24 +306,24 @@ const uniforms = {
 
 // Material
 const earthMaterial = new THREE.MeshStandardMaterial()
-earthMaterial.map = earthTexture.color
-earthMaterial.displacementMap = earthTexture.displacement
-earthMaterial.displacementScale = 0.01
-earthMaterial.roughnessMap = earthTexture.roughness
+// earthMaterial.map = earthTexture.color
+// earthMaterial.displacementMap = earthTexture.displacement
+// earthMaterial.displacementScale = 0.01
+// earthMaterial.roughnessMap = earthTexture.roughness
 
-const earthFolder = gui.addFolder('Earth')
-earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
+// const earthFolder = gui.addFolder('Earth')
+// earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
 
 // Geometry 
-earthMaterial.roughness = 1.0
-const earthMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(atmosphere.innerRadius, 256, 256),
-    earthMaterial,
-    // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-)
-scene.add(earthMesh)
-earthMesh.visible = false
-gui.add(earthMesh, 'visible').name('Earth')
+// earthMaterial.roughness = 1.0
+// const earthMesh = new THREE.Mesh(
+//     new THREE.SphereGeometry(atmosphere.innerRadius, 256, 256),
+//     earthMaterial,
+//     // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+// )
+// scene.add(earthMesh)
+// earthMesh.visible = false
+// gui.add(earthMesh, 'visible').name('Earth')
 
 // Ground 
 const groundMaterial = new THREE.ShaderMaterial({
@@ -401,7 +408,7 @@ const tick = () => {
     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
 
     const cameraHeight = camera.position.length()
-    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, earthMesh.position).normalize()
+    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, skyMesh.position).normalize()
     const scale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius)
     skyMesh.material.uniforms.v3LightPosition.value = lightDir 
     skyMesh.material.uniforms.fCameraHeight.value = cameraHeight 
