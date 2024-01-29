@@ -94,7 +94,7 @@ const world = new THREE.Group();
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 2000)
 camera.position.x = 180 
 camera.position.y = 0 
 camera.position.z = 0
@@ -218,16 +218,16 @@ atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1).onChange(() => {
 })
 atmoFolder.add(atmosphere, 'g').min(-1).max(1).step(0.001)
 atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-  uniforms.fInnerRadius = r;
-  uniforms.fInnerRadius2 = r * r;
-  uniforms.fScale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-  uniforms.fScaleOverScaleDepth = uniforms.fScale / uniforms.fScaleDepth;
+  uniforms.fInnerRadius.value = r;
+  uniforms.fInnerRadius2.value = r * r;
+  uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+  uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
 })
 atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-  uniforms.fOuterRadius = r;
-  uniforms.fOuterRadius2 = r * r;
-  uniforms.fScale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-  uniforms.fScaleOverScaleDepth = uniforms.fScale / uniforms.fScaleDepth;
+  uniforms.fOuterRadius.value = r;
+  uniforms.fOuterRadius2.value = r * r;
+  uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+  uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
 })
 atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
 atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
@@ -312,6 +312,10 @@ const skyMesh = new THREE.Mesh(
 world.add(skyMesh)
 gui.add(skyMesh, 'visible').name('Sky')
 
+gui.add(world.scale, 'x').min(0).max(10).step(0.01).name('World Scale').onChange(() => {
+    world.scale.y = world.scale.x
+    world.scale.z = world.scale.x
+})
 scene.add(world)
 
 // earthMesh.castShadow = true
