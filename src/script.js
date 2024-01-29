@@ -102,7 +102,6 @@ camera.lookAt(0, 0, 0)
 scene.add(camera)
 
 
-
 /**
  * Lights
  */
@@ -234,102 +233,30 @@ atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
 atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
 
 const uniforms = {
-	v3LightPosition: {
-		type:	"v3",
-		value:	new THREE.Vector3(1e8, 0, 1e8).normalize(),
-    },
-	v3InvWavelength: {
-		type:	"v3",
-		value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)),
-    },
-	fCameraHeight: {
-		type:	"f",
-		value:	0,
-    },
-	fCameraHeight2: {
-		type:	"f",
-		value:	0,
-    },
-	fInnerRadius: {
-		type:	"f",
-		value:	atmosphere.innerRadius,
-    },
-	fInnerRadius2: {
-		type:	"f",
-		value:	atmosphere.innerRadius * atmosphere.innerRadius,
-    },
-	fOuterRadius: {
-		type:	"f",
-		value:	atmosphere.outerRadius,
-    },
-	fOuterRadius2: {
-		type:	"f",
-		value:	atmosphere.outerRadius * atmosphere.outerRadius,
-    },
-	fKrESun: {
-		type:	"f",
-		value:	atmosphere.Kr * atmosphere.ESun,
-    },
-	fKmESun: {
-		type:	"f",
-		value:	atmosphere.Km * atmosphere.ESun,
-    },
-	fKr4PI: {
-		type:	"f",
-		value:	atmosphere.Kr * 4.0 * Math.PI,
-    },
-	fKm4PI: {
-		type:	"f",
-		value:	atmosphere.Km * 4.0 * Math.PI,
-    },
-	fScale: {
-		type:	"f",
-		value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius),
-    },
-	fScaleDepth: {
-		type:	"f",
-		value:	atmosphere.scaleDepth,
-    },
-	fScaleOverScaleDepth: {
-		type:	"f",
-		value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius) / atmosphere.scaleDepth,
-    },
-	g: {
-		type:	"f",
-		value:	atmosphere.g,
-    },
-	g2: {
-		type:	"f",
-		value:	atmosphere.g * atmosphere.g,
-    },
-	nSamples: {
-		type:	"i",
-		value:	3,
-    },
-	fSamples: {
-		type:	"f",
-		value:	3.0,
-    },
-	tDiffuse: {
-		type:	"t",
-		value:	earthTexture.color,
-    },
-	tDiffuseNight: {
-		type:	"t",
-		value:	earthTexture.nightlights,
-    },
-	tDisplacement: {
-		type:	"t",
-		value:	0,
-    },
-	tSkyboxDiffuse: {
-		type:	"t",
-		value:	0,
-    },
-	fNightScale: {
-		type:	"f",
-		value:	1,
-    }
+	v3LightPosition: { value: new THREE.Vector3(1e8, 0, 1e8).normalize() },
+	v3InvWavelength: { value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)), },
+	fCameraHeight: { value:	0, },
+	fCameraHeight2: { value:	0, },
+	fInnerRadius: { value:	atmosphere.innerRadius, },
+	fInnerRadius2: { value:	atmosphere.innerRadius * atmosphere.innerRadius, },
+	fOuterRadius: { value:	atmosphere.outerRadius, },
+	fOuterRadius2: { value:	atmosphere.outerRadius * atmosphere.outerRadius, },
+	fKrESun: { value:	atmosphere.Kr * atmosphere.ESun, },
+	fKmESun: { value:	atmosphere.Km * atmosphere.ESun, },
+	fKr4PI: { value:	atmosphere.Kr * 4.0 * Math.PI, },
+	fKm4PI: { value:	atmosphere.Km * 4.0 * Math.PI, },
+	fScale: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius), },
+	fScaleDepth: { value:	atmosphere.scaleDepth, },
+	fScaleOverScaleDepth: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius) / atmosphere.scaleDepth, },
+	g: { value:	atmosphere.g, },
+	g2: { value:	atmosphere.g * atmosphere.g, },
+	nSamples: { value:	3, },
+	fSamples: { value:	3.0, },
+	tDiffuse: { value:	earthTexture.color, },
+	tDiffuseNight: { value:	earthTexture.nightlights, },
+	tDisplacement: { value:	0, },
+	tSkyboxDiffuse: { value:	0, },
+	fNightScale: { value:	1, }
 }
 
 // Material
@@ -361,10 +288,11 @@ const groundMaterial = new THREE.ShaderMaterial({
 })
 const groundMesh = new THREE.Mesh(
     new THREE.SphereGeometry(atmosphere.innerRadius, 32, 32),
-    // groundMaterial,
-    earthMaterial,
+    groundMaterial,
+    // earthMaterial,
 )
-scene.add(groundMesh)
+world.add(groundMesh)
+world.rotateX(Math.PI / 2)
 gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
@@ -450,18 +378,6 @@ const tick = () => {
     uniforms.v3LightPosition.value = lightDir 
     uniforms.fCameraHeight.value = cameraHeight 
     uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
-    // skyMesh.material.uniforms.fScale.value = scale
-    // skyMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
-    // skyMaterial.uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
-    // skyMaterial.uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
-
-    // groundMesh.material.uniforms.v3LightPosition.value = lightDir;
-    // groundMesh.material.uniforms.fCameraHeight.value = cameraHeight;
-    // groundMesh.material.uniforms.fCameraHeight2.value = cameraHeight * cameraHeight;
-    // groundMesh.material.uniforms.fScale.value = scale
-    // groundMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
-
-
 
     // Render
     renderer.render(scene, camera)
