@@ -23,8 +23,8 @@ uniform float fScale;			// 1 / (fOuterRadius - fInnerRadius)
 uniform float fScaleDepth;		// The scale depth (i.e. the altitude at which the atmosphere's average density is found)
 uniform float fScaleOverScaleDepth;	// fScale / fScaleDepth
 
-const int nSamples = 5;
-const float fSamples = 5.0;
+uniform int nSamples;
+uniform float fSamples;
 
 varying vec3 v3Direction;
 varying vec3 c0;
