@@ -31,8 +31,8 @@ varying vec3 c1;
 varying vec3 vNormal;
 varying vec2 vUv;
 
-const int nSamples = 3;
-const float fSamples = 3.0;
+uniform int nSamples;
+uniform float fSamples;
 
 
 float scale(float fCos)
