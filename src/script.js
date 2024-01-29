@@ -44,6 +44,12 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+* Stats
+ */
+const stats = new Stats()
+canvas.parentNode.appendChild(stats.dom)
+
+/**
  * Sizes
  */
 const sizes = {
@@ -449,6 +455,9 @@ const tick = () => {
     // Render
     renderer.render(scene, camera)
     // composer.render()
+
+    // Stats
+    stats.update()
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
