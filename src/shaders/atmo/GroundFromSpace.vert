@@ -7,7 +7,7 @@
 //
 
 // uniform vec3 v3CameraPos;		// The camera's current position
-uniform vec3 v3LightPos;		// The direction vector to the light source
+uniform vec3 v3LightPosition;		// The direction vector to the light source
 uniform vec3 v3InvWavelength;	// 1 / pow(wavelength, 4) for the red, green, and blue channels
 uniform float fCameraHeight;	// The camera's current height
 uniform float fCameraHeight2;	// fCameraHeight^2
@@ -29,7 +29,7 @@ varying vec3 v3Direction;
 varying vec3 c0;
 varying vec3 c1;
 varying vec3 vNormal;
-varying vec3 vUv;
+varying vec2 vUv;
 
 const int nSamples = 3;
 const float fSamples = 3.0;
@@ -60,7 +60,7 @@ void main(void)
 	fFar -= fNear;
 	float fDepth = exp((fInnerRadius - fOuterRadius) / fScaleDepth);
 	float fCameraAngle = dot(-v3Ray, v3Pos) / length(v3Pos);
-	float fLightAngle = dot(v3LightPos, v3Pos) / length(v3Pos);
+	float fLightAngle = dot(v3LightPosition, v3Pos) / length(v3Pos);
 	float fCameraScale = scale(fCameraAngle);
 	float fLightScale = scale(fLightAngle);
 	float fCameraOffset = fDepth*fCameraScale;
@@ -96,6 +96,6 @@ void main(void)
 	// gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 	// gl_TexCoord[1] = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // modified
-	vUv = uv;          // added
-	vNormal = normal;  // added
+	vUv = uv;          // get UV coords from ThreeJS 
+	vNormal = normal;  // get normal coords from ThreeJS 
 }

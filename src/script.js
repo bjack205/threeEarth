@@ -127,11 +127,11 @@ gui.add(directionalLight, 'castShadow').name('Sun Shadow')
 // })
 
 const exrLoader = new EXRLoader()
-// exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
-//     envMap.mapping = THREE.EquirectangularReflectionMapping
-//     scene.background = envMap
-//     scene.environment = envMap
-// })
+exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
+    envMap.mapping = THREE.EquirectangularReflectionMapping
+    scene.background = envMap
+    scene.environment = envMap
+})
 
 // const rgbeLoader = new RGBELoader()
 // rgbeLoader.load("./textures/environmentMap/2k.hdr", (envMap) => {
@@ -196,12 +196,31 @@ earthTexture.color.anisotropy = maxAnisotropy;
 earthTexture.nightlights.anisotropy = maxAnisotropy;
 
 const atmoFolder = gui.addFolder('Atmosphere')
-atmoFolder.add(atmosphere, 'Kr').min(0).max(1.0).step(0.0001)
-atmoFolder.add(atmosphere, 'Km').min(0).max(1.0).step(0.0001)
-atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1)
+atmoFolder.add(atmosphere, 'Kr').min(0).max(0.1).step(0.0001).onChange((Kr) => {
+  uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
+  uniforms.fKr4PI.value = atmosphere.Kr * 4 * Math.PI;
+})
+atmoFolder.add(atmosphere, 'Km').min(0).max(0.1).step(0.0001).onChange(() => {
+  uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
+  uniforms.fKm4PI.value = atmosphere.Km * 4 * Math.PI;
+})
+atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1).onChange(() => {
+  uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
+  uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
+})
 atmoFolder.add(atmosphere, 'g').min(-1).max(1).step(0.001)
-atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1)
-atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1)
+atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1).onChange((r) => {
+  uniforms.fInnerRadius = r;
+  uniforms.fInnerRadius2 = r * r;
+  uniforms.fScale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+  uniforms.fScaleOverScaleDepth = uniforms.fScale / uniforms.fScaleDepth;
+})
+atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r) => {
+  uniforms.fOuterRadius = r;
+  uniforms.fOuterRadius2 = r * r;
+  uniforms.fScale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+  uniforms.fScaleOverScaleDepth = uniforms.fScale / uniforms.fScaleDepth;
+})
 atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
 atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
 
@@ -306,10 +325,10 @@ const uniforms = {
 
 // Material
 const earthMaterial = new THREE.MeshStandardMaterial()
-// earthMaterial.map = earthTexture.color
+earthMaterial.map = earthTexture.color
 // earthMaterial.displacementMap = earthTexture.displacement
 // earthMaterial.displacementScale = 0.01
-// earthMaterial.roughnessMap = earthTexture.roughness
+earthMaterial.roughnessMap = earthTexture.roughness
 
 // const earthFolder = gui.addFolder('Earth')
 // earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
@@ -332,28 +351,29 @@ const groundMaterial = new THREE.ShaderMaterial({
     fragmentShader: GroundFromSpaceFragment,
 })
 const groundMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(atmosphere.innerRadius, 256, 256),
-    groundMaterial,
+    new THREE.SphereGeometry(atmosphere.innerRadius, 32, 32),
+    // groundMaterial,
+    earthMaterial,
 )
 scene.add(groundMesh)
 gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
-const skyMaterial = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: SkyFromSpaceVertex,
-    fragmentShader: SkyFromSpaceFragment,
-    side: THREE.BackSide,
-    vertexColors: true,
-    transparent: true,
-})
+// const skyMaterial = new THREE.ShaderMaterial({
+//     uniforms: uniforms,
+//     vertexShader: SkyFromSpaceVertex,
+//     fragmentShader: SkyFromSpaceFragment,
+//     side: THREE.BackSide,
+//     vertexColors: true,
+//     transparent: true,
+// })
 
-const skyMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
-    skyMaterial,
-)
-scene.add(skyMesh)
-gui.add(skyMesh, 'visible').name('Sky')
+// const skyMesh = new THREE.Mesh(
+//     new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
+//     skyMaterial,
+// )
+// scene.add(skyMesh)
+// gui.add(skyMesh, 'visible').name('Sky')
 
 // earthMesh.castShadow = true
 // earthMesh.receiveShadow = true
@@ -361,7 +381,7 @@ gui.add(skyMesh, 'visible').name('Sky')
 // earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
 
 // Axes Helper
-const axesHelper = new THREE.AxesHelper(2)
+const axesHelper = new THREE.AxesHelper(atmosphere.outerRadius * 1.5)
 scene.add(axesHelper)
 gui.add(axesHelper, 'visible').name('Axes Helper')
 
@@ -408,13 +428,22 @@ const tick = () => {
     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
 
     const cameraHeight = camera.position.length()
-    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, skyMesh.position).normalize()
+    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, groundMesh.position).normalize()
     const scale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius)
-    skyMesh.material.uniforms.v3LightPosition.value = lightDir 
-    skyMesh.material.uniforms.fCameraHeight.value = cameraHeight 
-    skyMesh.material.uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
-    skyMesh.material.uniforms.fScale.value = scale
-    skyMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
+    uniforms.v3LightPosition.value = lightDir 
+    uniforms.fCameraHeight.value = cameraHeight 
+    uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
+    // skyMesh.material.uniforms.fScale.value = scale
+    // skyMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
+    // skyMaterial.uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
+    // skyMaterial.uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
+
+    // groundMesh.material.uniforms.v3LightPosition.value = lightDir;
+    // groundMesh.material.uniforms.fCameraHeight.value = cameraHeight;
+    // groundMesh.material.uniforms.fCameraHeight2.value = cameraHeight * cameraHeight;
+    // groundMesh.material.uniforms.fScale.value = scale
+    // groundMesh.material.uniforms.fScaleOverScaleDepth.value = scale / atmosphere.scaleDepth
+
 
 
     // Render
