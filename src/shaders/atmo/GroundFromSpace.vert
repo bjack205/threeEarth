@@ -44,7 +44,8 @@ float scale(float fCos)
 void main(void)
 {
 	// Get the ray from the camera to the vertex and its length (which is the far point of the ray passing through the atmosphere)
-	vec3 v3Pos = position;   // gl_Vertex.xyz;
+	vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+	vec3 v3Pos = worldPosition.xyz;   // gl_Vertex.xyz;
 	vec3 v3Ray = v3Pos - cameraPosition;
 	float fFar = length(v3Ray);
 	v3Ray /= fFar;
