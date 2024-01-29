@@ -88,14 +88,17 @@ const BLOOM_SCENE = 1;
 const bloomLayer = new THREE.Layers();
 bloomLayer.set( BLOOM_SCENE );
 
+const world = new THREE.Group();
+
 /**
  * Camera
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
-camera.position.x = 0 
+camera.position.x = 180 
 camera.position.y = 0 
-camera.position.z = 180 
+camera.position.z = 0
+camera.lookAt(0, 0, 0)
 scene.add(camera)
 
 
@@ -365,21 +368,23 @@ scene.add(groundMesh)
 gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
-// const skyMaterial = new THREE.ShaderMaterial({
-//     uniforms: uniforms,
-//     vertexShader: SkyFromSpaceVertex,
-//     fragmentShader: SkyFromSpaceFragment,
-//     side: THREE.BackSide,
-//     vertexColors: true,
-//     transparent: true,
-// })
+const skyMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: SkyFromSpaceVertex,
+    fragmentShader: SkyFromSpaceFragment,
+    side: THREE.BackSide,
+    vertexColors: true,
+    transparent: true,
+})
 
-// const skyMesh = new THREE.Mesh(
-//     new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
-//     skyMaterial,
-// )
-// scene.add(skyMesh)
-// gui.add(skyMesh, 'visible').name('Sky')
+const skyMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
+    skyMaterial,
+)
+world.add(skyMesh)
+gui.add(skyMesh, 'visible').name('Sky')
+
+scene.add(world)
 
 // earthMesh.castShadow = true
 // earthMesh.receiveShadow = true
@@ -400,6 +405,8 @@ gui.add(axesHelper, 'visible').name('Axes Helper')
 /**
  * Controls
  */
+camera.up.set(0, 0, 1)
+camera.lookAt(0, 0, 0)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
@@ -434,8 +441,12 @@ const tick = () => {
     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
 
     const cameraHeight = camera.position.length()
-    const lightDir = new THREE.Vector3().subVectors(directionalLight.position, groundMesh.position).normalize()
-    const scale = 1 / (atmosphere.outerRadius - atmosphere.innerRadius)
+    let earthPosition = new THREE.Vector3()
+    groundMesh.getWorldPosition(earthPosition)
+
+    const lightDir = new THREE.Vector3().subVectors(
+      directionalLight.position, earthPosition
+    ).normalize()
     uniforms.v3LightPosition.value = lightDir 
     uniforms.fCameraHeight.value = cameraHeight 
     uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
