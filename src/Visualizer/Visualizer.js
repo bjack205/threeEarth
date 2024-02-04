@@ -1,9 +1,17 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
+import Stats from 'three/addons/libs/stats.module.js'
 import Earth from './Earth'
 
 export default class Visualizer {
     constructor(canvas=document.querySelector('canvas.webgl')) {
+        this.canvas = canvas
+
+        // Stats
+        this.stats = new Stats()
+        this.canvas.parentNode.appendChild(this.stats.dom)
+
         // Debug
         this.gui = new GUI()
         this.debugObject = {}
@@ -43,8 +51,15 @@ export default class Visualizer {
 
         // Earth
         this.earth = new Earth(this.scene, this.gui)
+        this.earth.addEarth(this.world)
+        this.scene.add(this.world)
+
+        // Controls
+        this.controls = new OrbitControls(this.camera, this.canvas)
+        this.controls.enableDamping = true
 
         // Listeners
+        this.clock = new THREE.Clock()
         window.addEventListener('resize', () => {
             this.resize()
         })
@@ -72,7 +87,32 @@ export default class Visualizer {
     }
 
     update() {
+        const elapsedTime = this.clock.getElapsedTime()
 
+        // Update controls
+        this.controls.update()
+
+        // Update atmosphere
+        const camera = this.getActiveCamera()
+        const uniforms = this.earth.uniforms
+        const cameraHeight = camera.position.length()
+        let earthPosition = new THREE.Vector3()
+        this.earth.groundMesh.getWorldPosition(earthPosition)
+
+        const lightDir = new THREE.Vector3().subVectors(
+            this.directionalLight.position, earthPosition
+        ).normalize()
+        uniforms.v3LightPosition.value = lightDir 
+        uniforms.fCameraHeight.value = cameraHeight 
+        uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
+
+        // Render
+        this.renderer.render(this.scene, this.camera)
+
+        // Stats
+        this.stats.update()
+
+        window.requestAnimationFrame(() => { this.update() })
     }
 
     destroy() {

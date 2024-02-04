@@ -51,18 +51,34 @@ export default class Earth {
                     type: 'texture',
                     path: './textures/earth/earth_nightlights_small.jpg'
                 },
+                // nightlights10k: {
+                //     type: 'tiff',
+                //     path: './textures/earth/earth_nightlights_10k.tif'
+                // }
+                nightlights1k: {
+                    type: 'texture',
+                    path: './textures/earth/earthlights1k.jpg'
+                },
+                nightlights2k: {
+                    type: 'texture',
+                    path: './textures/earth/earthlights2k.jpg'
+                },
+                nightlights4k: {
+                    type: 'texture',
+                    path: './textures/earth/earthlights4k.jpg'
+                },
                 nightlights10k: {
-                    type: 'tiff',
-                    path: './textures/earth/earth_nightlights_10k.tif'
-                }
+                    type: 'texture',
+                    path: './textures/earth/earthlights10k.jpg'
+                },
             }
         }
 
         this.stars = { name: '', texture: null }
         this.color = { name: '', texture: null }
         this.nightlights = { name: '', texture: null }
-        this.setStars('stars4k')
-        this.setEarthColor('colorSmall')
+        this.setStars('stars8k')
+        this.setEarthColor('color10k')
         this.setEarthNightlights('nightlightsSmall')
 
         // Shader uniforms
@@ -135,6 +151,11 @@ export default class Earth {
         this.addDebug()
     }
 
+    addEarth(scene) {
+        scene.add(this.skyMesh)
+        scene.add(this.groundMesh)
+    }
+
     setStars(stars) {
         if (this.stars.texture) this.stars.texture.dispose()
         this.stars = {
@@ -161,6 +182,7 @@ export default class Earth {
     }
 
     setEarthNightlights(nightlights) {
+        if (this.nightlights.texture) this.nightlights.texture.dispose()
         this.nightlights = {
             name: nightlights,
             texture: this.#loadResource(this.textures.nightlights[nightlights], (texture, resource) => {
@@ -202,6 +224,7 @@ export default class Earth {
 
         const atmoFolder = folder.addFolder('Atmosphere')
         const atmosphere = this.atmosphere
+        const uniforms = this.uniforms
         atmoFolder.add(atmosphere, 'Kr').min(0).max(0.1).step(0.0001).onChange((Kr) => {
             uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun;
             uniforms.fKr4PI.value = atmosphere.Kr * 4 * Math.PI;

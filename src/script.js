@@ -53,8 +53,8 @@ const scene = viz.scene
 /**
 * Stats
  */
-const stats = new Stats()
-canvas.parentNode.appendChild(stats.dom)
+// const stats = new Stats()
+// canvas.parentNode.appendChild(stats.dom)
 
 /**
  * Sizes
@@ -163,89 +163,88 @@ const camera = viz.camera
 /**
  * Textures
  */
-const textureLoader = new THREE.TextureLoader()
+// const textureLoader = new THREE.TextureLoader()
 
-const tiffLoader = new TIFFLoader()
-const earthTexture = {
-    // color: tiffLoader.load('/textures/earth/earth_color_10K.tif', (texture) => {
-    //     texture.colorSpace = THREE.SRGBColorSpace
-    //     console.log("Loaded earth color texture")
-    // }),
-    // color: textureLoader.load('/textures/earth/earth_color_small.jpg', (texture) => {
-    //     texture.colorSpace = THREE.SRGBColorSpace
-    //     console.log("Loaded earth color texture")
-    // }),
-    // displacement: textureLoader.load('/textures/earth/topography_21k.png', (texture) => {
-    //     console.log("Loaded earth displacement texture")
-    // }),
-    // landocean: textureLoader.load('/textures/earth/earth_landocean_4K.png', (texture) => {
-    //     console.log("Loaded earth landocean texture")
-    // }),
-    // roughness: textureLoader.load('/textures/earth/earth_roughness.png', (texture) => {
-    //     console.log("Loaded earth roughness texture")
-    //     console.log(texture)
-    // }),
-    // nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
-    //     console.log("Loaded earth nightlights texture")
-    // }),
-    // nightlights: textureLoader.load('/textures/earth/earth_nightlights_small.jpg', (texture) => {
-    //     console.log("Loaded earth nightlights texture")
-    // }),
-    color: viz.earth.color.texture,
-    nightlights: viz.earth.nightlights.texture
-}
-// earthTexture.color.colorSpace = THREE.SRGBColorSpace
+// const tiffLoader = new TIFFLoader()
+// const earthTexture = {
+//     // color: tiffLoader.load('/textures/earth/earth_color_10K.tif', (texture) => {
+//     //     texture.colorSpace = THREE.SRGBColorSpace
+//     //     console.log("Loaded earth color texture")
+//     // }),
+//     // color: textureLoader.load('/textures/earth/earth_color_small.jpg', (texture) => {
+//     //     texture.colorSpace = THREE.SRGBColorSpace
+//     //     console.log("Loaded earth color texture")
+//     // }),
+//     // displacement: textureLoader.load('/textures/earth/topography_21k.png', (texture) => {
+//     //     console.log("Loaded earth displacement texture")
+//     // }),
+//     // landocean: textureLoader.load('/textures/earth/earth_landocean_4K.png', (texture) => {
+//     //     console.log("Loaded earth landocean texture")
+//     // }),
+//     // roughness: textureLoader.load('/textures/earth/earth_roughness.png', (texture) => {
+//     //     console.log("Loaded earth roughness texture")
+//     //     console.log(texture)
+//     // }),
+//     // nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
+//     //     console.log("Loaded earth nightlights texture")
+//     // }),
+//     // nightlights: textureLoader.load('/textures/earth/earth_nightlights_small.jpg', (texture) => {
+//     //     console.log("Loaded earth nightlights texture")
+//     // }),
+//     color: viz.earth.color.texture,
+//     nightlights: viz.earth.nightlights.texture
+// }
+// // earthTexture.color.colorSpace = THREE.SRGBColorSpace
 
 
 /**
  * Earth 
  */
 
-const atmosphere = {
-	Kr				: 0.0025,
-	Km				: 0.0010,
-	ESun			: 20.0,
-	g				: -0.950,
-	innerRadius 	: 100,
-	outerRadius		: 102.5,
-	wavelength		: [0.650, 0.570, 0.475],
-	scaleDepth		: 0.25,
-	mieScaleDepth	: 0.1,
-}
-const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-earthTexture.color.anisotropy = maxAnisotropy;
-earthTexture.nightlights.anisotropy = maxAnisotropy;
+// const atmosphere = {
+// 	Kr				: 0.0025,
+// 	Km				: 0.0010,
+// 	ESun			: 20.0,
+// 	g				: -0.950,
+// 	innerRadius 	: 100,
+// 	outerRadius		: 102.5,
+// 	wavelength		: [0.650, 0.570, 0.475],
+// 	scaleDepth		: 0.25,
+// 	mieScaleDepth	: 0.1,
+// }
+// const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+// earthTexture.color.anisotropy = maxAnisotropy;
+// earthTexture.nightlights.anisotropy = maxAnisotropy;
 
-const atmoFolder = gui.addFolder('Atmosphere')
-atmoFolder.add(atmosphere, 'Kr').min(0).max(0.1).step(0.0001).onChange((Kr) => {
-  uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
-  uniforms.fKr4PI.value = atmosphere.Kr * 4 * Math.PI;
-})
-atmoFolder.add(atmosphere, 'Km').min(0).max(0.1).step(0.0001).onChange(() => {
-  uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
-  uniforms.fKm4PI.value = atmosphere.Km * 4 * Math.PI;
-})
-atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1).onChange(() => {
-  uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
-  uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
-})
-atmoFolder.add(atmosphere, 'g').min(-1).max(1).step(0.001)
-atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-  uniforms.fInnerRadius.value = r;
-  uniforms.fInnerRadius2.value = r * r;
-  uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-  uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
-})
-atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-  uniforms.fOuterRadius.value = r;
-  uniforms.fOuterRadius2.value = r * r;
-  uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-  uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
-})
-atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
-atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
+// const atmoFolder = gui.addFolder('Atmosphere')
+// atmoFolder.add(atmosphere, 'Kr').min(0).max(0.1).step(0.0001).onChange((Kr) => {
+//   uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
+//   uniforms.fKr4PI.value = atmosphere.Kr * 4 * Math.PI;
+// })
+// atmoFolder.add(atmosphere, 'Km').min(0).max(0.1).step(0.0001).onChange(() => {
+//   uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
+//   uniforms.fKm4PI.value = atmosphere.Km * 4 * Math.PI;
+// })
+// atmoFolder.add(atmosphere, 'ESun').min(0).max(100).step(0.1).onChange(() => {
+//   uniforms.fKmESun.value = atmosphere.Km * atmosphere.ESun;
+//   uniforms.fKrESun.value = atmosphere.Kr * atmosphere.ESun; 
+// })
+// atmoFolder.add(atmosphere, 'g').min(-1).max(1).step(0.001)
+// atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1).onChange((r) => {
+//   uniforms.fInnerRadius.value = r;
+//   uniforms.fInnerRadius2.value = r * r;
+//   uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+//   uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
+// })
+// atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r) => {
+//   uniforms.fOuterRadius.value = r;
+//   uniforms.fOuterRadius2.value = r * r;
+//   uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
+//   uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
+// })
+// atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
+// atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
 
-let uniforms = viz.earth.uniforms
 // uniforms = {
 // 	v3LightPosition: { value: new THREE.Vector3(1e8, 0, 1e8).normalize() },
 // 	v3InvWavelength: { value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)), },
@@ -274,11 +273,11 @@ let uniforms = viz.earth.uniforms
 // }
 
 // Material
-const earthMaterial = new THREE.MeshStandardMaterial()
-earthMaterial.map = earthTexture.color
-// earthMaterial.displacementMap = earthTexture.displacement
-// earthMaterial.displacementScale = 0.01
-earthMaterial.roughnessMap = earthTexture.roughness
+// const earthMaterial = new THREE.MeshStandardMaterial()
+// earthMaterial.map = earthTexture.color
+// // earthMaterial.displacementMap = earthTexture.displacement
+// // earthMaterial.displacementScale = 0.01
+// earthMaterial.roughnessMap = earthTexture.roughness
 
 // const earthFolder = gui.addFolder('Earth')
 // earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
@@ -305,20 +304,20 @@ earthMaterial.roughnessMap = earthTexture.roughness
 //     groundMaterial,
 //     // earthMaterial,
 // )
-const groundMesh = viz.earth.groundMesh
-world.add(groundMesh)
+// const groundMesh = viz.earth.groundMesh
+// world.add(groundMesh)
 // world.rotateX(Math.PI / 2)
-gui.add(groundMesh, 'visible').name('Ground')
+// gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
-const skyMaterial = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: SkyFromSpaceVertex,
-    fragmentShader: SkyFromSpaceFragment,
-    side: THREE.BackSide,
-    vertexColors: true,
-    transparent: true,
-})
+// const skyMaterial = new THREE.ShaderMaterial({
+//     uniforms: uniforms,
+//     vertexShader: SkyFromSpaceVertex,
+//     fragmentShader: SkyFromSpaceFragment,
+//     side: THREE.BackSide,
+//     vertexColors: true,
+//     transparent: true,
+// })
 
 // const skyMesh = new THREE.Mesh(
 //     // new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
@@ -326,15 +325,15 @@ const skyMaterial = new THREE.ShaderMaterial({
 //     viz.earth.skyGeometry,
 //     viz.earth.skyMaterial
 // )
-const skyMesh = viz.earth.skyMesh
-world.add(skyMesh)
-gui.add(skyMesh, 'visible').name('Sky')
+// const skyMesh = viz.earth.skyMesh
+// world.add(skyMesh)
+// gui.add(skyMesh, 'visible').name('Sky')
 
-gui.add(world.scale, 'x').min(0).max(10).step(0.01).name('World Scale').onChange(() => {
-    world.scale.y = world.scale.x
-    world.scale.z = world.scale.x
-})
-scene.add(world)
+// gui.add(world.scale, 'x').min(0).max(10).step(0.01).name('World Scale').onChange(() => {
+//     world.scale.y = world.scale.x
+//     world.scale.z = world.scale.x
+// })
+// scene.add(world)
 
 // earthMesh.castShadow = true
 // earthMesh.receiveShadow = true
@@ -342,7 +341,7 @@ scene.add(world)
 // earthFolder.add(earthMaterial, 'displacementScale').min(0).max(0.1).step(0.001)
 
 // Axes Helper
-const axesHelper = new THREE.AxesHelper(atmosphere.outerRadius * 1.5)
+const axesHelper = new THREE.AxesHelper(viz.earth.atmosphere.outerRadius * 1.5)
 scene.add(axesHelper)
 gui.add(axesHelper, 'visible').name('Axes Helper')
 
@@ -355,61 +354,63 @@ gui.add(axesHelper, 'visible').name('Axes Helper')
 /**
  * Controls
  */
-camera.up.set(0, 0, 1)
-camera.lookAt(0, 0, 0)
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+// camera.up.set(0, 0, 1)
+// camera.lookAt(0, 0, 0)
+// const controls = new OrbitControls(camera, canvas)
+// controls.enableDamping = true
 
-/**
- * Animate
- */
-const clock = new THREE.Clock()
+// /**
+//  * Animate
+//  */
+// const clock = new THREE.Clock()
+// let uniforms = viz.earth.uniforms
 
-const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+// const tick = () => {
+//     const elapsedTime = clock.getElapsedTime()
 
-    // Update Objects
-    // sphereMesh.rotation.y = 0.1 * elapsedTime
-    // planeMesh.rotation.y = 0.1 * elapsedTime
-    // torusMesh.rotation.y = 0.1 * elapsedTime
+//     // Update Objects
+//     // sphereMesh.rotation.y = 0.1 * elapsedTime
+//     // planeMesh.rotation.y = 0.1 * elapsedTime
+//     // torusMesh.rotation.y = 0.1 * elapsedTime
 
-    // const xRate = -0.15
-    // sphereMesh.rotation.x = xRate * elapsedTime
-    // planeMesh.rotation.x = xRate * elapsedTime
-    // torusMesh.rotation.x = xRate * elapsedTime
+//     // const xRate = -0.15
+//     // sphereMesh.rotation.x = xRate * elapsedTime
+//     // planeMesh.rotation.x = xRate * elapsedTime
+//     // torusMesh.rotation.x = xRate * elapsedTime
 
-    // shaderMaterial.uniforms.uViewVector.value = new THREE.Vector3().subVectors(camera.position, earthMesh.position)
-    // console.log(camera.position)
-    // glow.material.uniforms.viewVector.value = new THREE.Vector3().subVectors(camera.position, glow.position)
-    // glow.material.uniforms.uCameraPosition.value = camera.position
+//     // shaderMaterial.uniforms.uViewVector.value = new THREE.Vector3().subVectors(camera.position, earthMesh.position)
+//     // console.log(camera.position)
+//     // glow.material.uniforms.viewVector.value = new THREE.Vector3().subVectors(camera.position, glow.position)
+//     // glow.material.uniforms.uCameraPosition.value = camera.position
 
-    // Update controls
-    // const cameraDistance = camera.position.distanceTo(earthMesh.position)
-    // console.log(cameraDistance)
-    // updateOutline()
-    controls.update()
-    // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
+//     // Update controls
+//     // const cameraDistance = camera.position.distanceTo(earthMesh.position)
+//     // console.log(cameraDistance)
+//     // updateOutline()
+//     controls.update()
+//     // outlinePass.edgeStrength = Math.max(10 - cameraDistance, 0.1)
 
-    const cameraHeight = camera.position.length()
-    let earthPosition = new THREE.Vector3()
-    groundMesh.getWorldPosition(earthPosition)
+//     const cameraHeight = camera.position.length()
+//     let earthPosition = new THREE.Vector3()
+//     groundMesh.getWorldPosition(earthPosition)
 
-    const lightDir = new THREE.Vector3().subVectors(
-      viz.directionalLight.position, earthPosition
-    ).normalize()
-    uniforms.v3LightPosition.value = lightDir 
-    uniforms.fCameraHeight.value = cameraHeight 
-    uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
+//     const lightDir = new THREE.Vector3().subVectors(
+//       viz.directionalLight.position, earthPosition
+//     ).normalize()
+//     uniforms.v3LightPosition.value = lightDir 
+//     uniforms.fCameraHeight.value = cameraHeight 
+//     uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
 
-    // Render
-    renderer.render(scene, camera)
-    // composer.render()
+//     // Render
+//     renderer.render(scene, camera)
+//     // composer.render()
 
-    // Stats
-    stats.update()
+//     // Stats
+//     stats.update()
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+//     // Call tick again on the next frame
+//     window.requestAnimationFrame(tick)
+// }
 
-tick()
+// // tick()
+viz.update()
