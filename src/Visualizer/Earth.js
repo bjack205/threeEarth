@@ -96,7 +96,8 @@ export default class Earth {
             Km: 0.0010,
             ESun: 20.0,
             g: -0.950,
-            innerRadius: 100,
+            innerRadius: 50,
+            atmoScaling: 2.5, 
             outerRadius: 102.5,
             wavelength: [0.650, 0.570, 0.475],
             scaleDepth: 0.25,
@@ -131,6 +132,13 @@ export default class Earth {
             fNightScale: { value: 1, }
         }
 
+        // Geometry
+        this.groundSegments = 64
+        this.groundGeometry = this.newGroundGeometry()
+
+        this.skySegments = 256
+        this.skyGeometry = this.newSkyGeometry()
+
         // Materials
         this.groundMaterial = new THREE.ShaderMaterial({
             uniforms: this.uniforms,
@@ -147,18 +155,14 @@ export default class Earth {
             transparent: true,
         })
 
-        // Geometry
-        this.groundSegments = 64
-        this.groundGeometry = this.newGroundGeometry()
-
-        this.skySegments = 256
-        this.skyGeometry = this.newSkyGeometry()
-
         // Meshes
         this.cloudScale = 0.2
         this.skyMesh = new THREE.Mesh(this.skyGeometry, this.skyMaterial)
         this.groundMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
         // this.cloudMesh.scale.setScalar(this.cloudScale / 100.0 + 1.0)
+
+        // Update radius
+        this.setRadius(this.atmosphere.innerRadius, this.atmosphere.atmoScaling)
 
         this.addDebug()
     }
@@ -238,6 +242,25 @@ export default class Earth {
         this.loaders.tiff = new TIFFLoader()
     }
 
+    setRadius(inner, scaling=this.atmosphere.atmoScaling) {
+        this.atmosphere.innerRadius = inner
+        this.atmosphere.atmoScaling = scaling
+        this.atmosphere.outerRadius = inner * (scaling / 100.0 + 1.0)
+
+        this.uniforms.fInnerRadius.value = this.atmosphere.innerRadius
+        this.uniforms.fInnerRadius2.value = this.atmosphere.innerRadius * this.atmosphere.innerRadius
+        this.uniforms.fOuterRadius.value = this.atmosphere.outerRadius
+        this.uniforms.fOuterRadius2.value = this.atmosphere.outerRadius * this.atmosphere.outerRadius
+
+        this.uniforms.fScale.value = 1 / (this.atmosphere.outerRadius - this.atmosphere.innerRadius)
+        this.uniforms.fScaleOverScaleDepth.value = this.uniforms.fScale.value / this.uniforms.fScaleDepth.value;
+
+        this.groundGeometry = this.newGroundGeometry()
+        this.skyGeometry = this.newSkyGeometry()
+        this.groundMesh.geometry = this.groundGeometry
+        this.skyMesh.geometry = this.skyGeometry
+    }
+
     addDebug() {
         const folder = this.gui.addFolder('Earth')
         folder.add(this.stars, 'name').options(Object.keys(this.textures.stars)).name('Stars').onFinishChange((value) => {
@@ -278,16 +301,10 @@ export default class Earth {
             uniforms.g2.value = atmosphere.g * atmosphere.g;
         })
         atmoFolder.add(atmosphere, 'innerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-            uniforms.fInnerRadius.value = r;
-            uniforms.fInnerRadius2.value = r * r;
-            uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-            uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
+            this.setRadius(r)
         })
-        atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r) => {
-            uniforms.fOuterRadius.value = r;
-            uniforms.fOuterRadius2.value = r * r;
-            uniforms.fScale.value = 1 / (atmosphere.outerRadius - atmosphere.innerRadius);
-            uniforms.fScaleOverScaleDepth.value = uniforms.fScale.value / uniforms.fScaleDepth.value;
+        atmoFolder.add(atmosphere, 'atmoScaling').min(0).max(10).step(0.01).onChange((s) => {
+            this.setRadius(this.atmosphere.innerRadius, s)
         })
         atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001).onChange(() => {
             uniforms.fScaleDepth.value = atmosphere.scaleDepth;
