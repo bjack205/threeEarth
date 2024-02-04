@@ -31,8 +31,6 @@ export default class Visualizer {
 
         // Scene 
         this.scene = new THREE.Scene()
-        this.world = new THREE.Group()
-        this.world.rotateX(Math.PI / 2)
 
         // Camera
         const fov = 75
@@ -50,8 +48,13 @@ export default class Visualizer {
         this.lightsDebug(this.ambientLight, this.directionalLight)
 
         // Earth
+        this.world = new THREE.Group()
+        this.earthGroup = new THREE.Group()
+        this.earthGroup.rotateX(Math.PI / 2)
+
         this.earth = new Earth(this.scene, this.gui)
-        this.earth.addEarth(this.world)
+        this.earth.addEarth(this.earthGroup)
+        this.world.add(this.earthGroup)
         this.scene.add(this.world)
 
         // Controls
@@ -63,6 +66,10 @@ export default class Visualizer {
         window.addEventListener('resize', () => {
             this.resize()
         })
+
+        // Debug
+        this.debugObject.earthRotation = 0.0
+        this.addDebug()
 
         console.log('Here starts a great experience')
     }
@@ -160,6 +167,18 @@ export default class Visualizer {
         lightsDebug.add(directionalLight.position, 'x').min(-1).max(1).step(0.01).name('Sun X')
         lightsDebug.add(directionalLight.position, 'y').min(-1).max(1).step(0.01).name('Sun Y')
         lightsDebug.add(directionalLight.position, 'z').min(-1).max(1).step(0.01).name('Sun Z')
+    }
+
+    addDebug() {
+        const debug = this.gui.addFolder('Debug')
+        debug.add(this.debugObject, 'earthRotation').min(-180).max(180).step(0.1).name('Earth Rotation').onChange(() => {
+            this.world.rotation.z = THREE.MathUtils.degToRad(this.debugObject.earthRotation)
+        })
+
+        // axis helper
+        this.axisHelper = new THREE.AxesHelper(this.earth.atmosphere.outerRadius * 1.2)
+        this.world.add(this.axisHelper)
+        debug.add(this.axisHelper, 'visible').name('Axis Helper')
     }
 
 }
