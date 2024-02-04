@@ -28,20 +28,27 @@ import SkyFromSpaceFragment from './shaders/atmo/SkyFromSpace.frag'
 import GroundFromSpaceVertex from './shaders/atmo/GroundFromSpace.vert'
 import GroundFromSpaceFragment from './shaders/atmo/GroundFromSpace.frag'
 
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Vizualizer
+import Visualizer from './Visualizer/Visualizer'
+const viz = new Visualizer(canvas)
+
 /**
  * Debug
  */
-const gui = new GUI()
-const debugObject = {}
+// const gui = new GUI()
+// const debugObject = {}
+const gui = viz.gui
 
 /**
  * Base
  */
-// Canvas
-const canvas = document.querySelector('canvas.webgl')
 
 // Scene
-const scene = new THREE.Scene()
+// const scene = new THREE.Scene()
+const scene = viz.scene
 
 /**
 * Stats
@@ -52,41 +59,42 @@ canvas.parentNode.appendChild(stats.dom)
 /**
  * Sizes
  */
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+// const sizes = {
+//     width: window.innerWidth,
+//     height: window.innerHeight
+// }
 
-window.addEventListener('resize', () => {
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+// window.addEventListener('resize', () => {
+//     // Update sizes
+//     sizes.width = window.innerWidth
+//     sizes.height = window.innerHeight
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+//     // Update camera
+//     camera.aspect = sizes.width / sizes.height
+//     camera.updateProjectionMatrix()
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    // composer.setSize(sizes.width, sizes.height)
-})
+//     // Update renderer
+//     renderer.setSize(sizes.width, sizes.height)
+//     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+//     // composer.setSize(sizes.width, sizes.height)
+// })
 
 /**
  * Renderer
  */
-const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
-})
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.outputColorSpace = THREE.SRGBColorSpace
+const renderer = viz.renderer
+// const renderer = new THREE.WebGLRenderer({
+//     canvas: canvas
+// })
+// renderer.shadowMap.enabled = true
+// renderer.shadowMap.type = THREE.PCFSoftShadowMap
+// renderer.setSize(sizes.width, sizes.height)
+// renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+// renderer.outputColorSpace = THREE.SRGBColorSpace
 
-const BLOOM_SCENE = 1;
-const bloomLayer = new THREE.Layers();
-bloomLayer.set( BLOOM_SCENE );
+// const BLOOM_SCENE = 1;
+// const bloomLayer = new THREE.Layers();
+// bloomLayer.set( BLOOM_SCENE );
 
 const world = new THREE.Group();
 
@@ -94,29 +102,30 @@ const world = new THREE.Group();
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 2000)
-camera.position.x = 180 
-camera.position.y = 0 
-camera.position.z = 0
-camera.lookAt(0, 0, 0)
-scene.add(camera)
+const camera = viz.camera
+// const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 2000)
+// camera.position.x = 180 
+// camera.position.y = 0 
+// camera.position.z = 0
+// camera.lookAt(0, 0, 0)
+// scene.add(camera)
 
 
 /**
  * Lights
  */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.0)
-const pointLight = new THREE.PointLight(0xffffff, 30.0)
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
-directionalLight.position.set(100, 0, .0)
-directionalLight.castShadow = true
-pointLight.position.set(2, 3, 4)
-scene.add(ambientLight)
-scene.add(directionalLight)
-// scene.add(pointLight)
-gui.add(ambientLight, 'intensity').min(0).max(1).step(0.01)
-gui.add(directionalLight, 'intensity').name('Sun Intensity').min(0).max(10).step(0.01)
-gui.add(directionalLight, 'castShadow').name('Sun Shadow')
+// const ambientLight = new THREE.AmbientLight(0xffffff, 0.0)
+// const pointLight = new THREE.PointLight(0xffffff, 30.0)
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+// directionalLight.position.set(100, 0, .0)
+// directionalLight.castShadow = true
+// pointLight.position.set(2, 3, 4)
+// scene.add(ambientLight)
+// scene.add(directionalLight)
+// // scene.add(pointLight)
+// gui.add(ambientLight, 'intensity').min(0).max(1).step(0.01)
+// gui.add(directionalLight, 'intensity').name('Sun Intensity').min(0).max(10).step(0.01)
+// gui.add(directionalLight, 'castShadow').name('Sun Shadow')
 
 /**
  * Environment Map
@@ -134,12 +143,13 @@ gui.add(directionalLight, 'castShadow').name('Sun Shadow')
 //     envMapData.cubeRender = pmremGenerator.fromEquirectangular( texture );;
 // })
 
-const exrLoader = new EXRLoader()
-exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
-    envMap.mapping = THREE.EquirectangularReflectionMapping
-    scene.background = envMap
-    scene.environment = envMap
-})
+// const exrLoader = new EXRLoader()
+// const envMap = exrLoader.load("./textures/stars/hiptyc_2020_4k.exr", (envMap) => {
+//     envMap.mapping = THREE.EquirectangularReflectionMapping
+// })
+// const envMap = viz.earth.stars.texture
+// scene.background = envMap
+// scene.environment = envMap
 
 // const rgbeLoader = new RGBELoader()
 // rgbeLoader.load("./textures/environmentMap/2k.hdr", (envMap) => {
@@ -160,10 +170,10 @@ const earthTexture = {
     //     texture.colorSpace = THREE.SRGBColorSpace
     //     console.log("Loaded earth color texture")
     // }),
-    color: textureLoader.load('/textures/earth/earth_color_small.jpg', (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace
-        console.log("Loaded earth color texture")
-    }),
+    // color: textureLoader.load('/textures/earth/earth_color_small.jpg', (texture) => {
+    //     texture.colorSpace = THREE.SRGBColorSpace
+    //     console.log("Loaded earth color texture")
+    // }),
     // displacement: textureLoader.load('/textures/earth/topography_21k.png', (texture) => {
     //     console.log("Loaded earth displacement texture")
     // }),
@@ -177,11 +187,13 @@ const earthTexture = {
     // nightlights: tiffLoader.load('/textures/earth/earth_nightlights_10K.tif', (texture) => {
     //     console.log("Loaded earth nightlights texture")
     // }),
-    nightlights: textureLoader.load('/textures/earth/earth_nightlights_small.jpg', (texture) => {
-        console.log("Loaded earth nightlights texture")
-    }),
+    // nightlights: textureLoader.load('/textures/earth/earth_nightlights_small.jpg', (texture) => {
+    //     console.log("Loaded earth nightlights texture")
+    // }),
+    color: viz.earth.color.texture,
+    nightlights: viz.earth.nightlights.texture
 }
-earthTexture.color.colorSpace = THREE.SRGBColorSpace
+// earthTexture.color.colorSpace = THREE.SRGBColorSpace
 
 
 /**
@@ -377,7 +389,7 @@ const tick = () => {
     groundMesh.getWorldPosition(earthPosition)
 
     const lightDir = new THREE.Vector3().subVectors(
-      directionalLight.position, earthPosition
+      viz.directionalLight.position, earthPosition
     ).normalize()
     uniforms.v3LightPosition.value = lightDir 
     uniforms.fCameraHeight.value = cameraHeight 
