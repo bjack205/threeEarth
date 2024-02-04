@@ -13,6 +13,7 @@ uniform float fNightScale;
 uniform vec3 v3LightPosition;
 uniform sampler2D tDiffuse;
 uniform sampler2D tDiffuseNight;
+uniform sampler2D tDiffuseClouds;
 
 varying vec3 v3Direction;
 varying vec3 c0;
@@ -28,13 +29,15 @@ void main (void)
 
 	vec3 diffuseTexture = texture2D(tDiffuse, vUv).xyz;
 	vec3 diffuseNightTexture = texture2D(tDiffuseNight, vUv).xyz;
+	vec3 clouds = texture2D(tDiffuseClouds, vUv).xyz;
 
 	float alpha = clamp(vLightAngle, 0.0, 1.0);
-	vec3 day = diffuseTexture * c0;
+	vec3 day = (diffuseTexture + clouds) * c0;
 
 	float beta = 0.5;
 	float nightFade = clamp((beta - alpha) / beta, 0.0, 1.0);
 	vec3 night = fNightScale * diffuseNightTexture * nightFade;
+
 
 	gl_FragColor = vec4(c1, 1.0) * 1.0 + vec4(night + day, 1.0);
 }
