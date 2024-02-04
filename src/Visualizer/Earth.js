@@ -51,10 +51,6 @@ export default class Earth {
                     type: 'texture',
                     path: './textures/earth/earth_nightlights_small.jpg'
                 },
-                // nightlights10k: {
-                //     type: 'tiff',
-                //     path: './textures/earth/earth_nightlights_10k.tif'
-                // }
                 nightlights1k: {
                     type: 'texture',
                     path: './textures/earth/earthlights1k.jpg'
@@ -71,15 +67,28 @@ export default class Earth {
                     type: 'texture',
                     path: './textures/earth/earthlights10k.jpg'
                 },
+            },
+            clouds: {
+                clouds1k: {
+                    type: 'texture',
+                    path: './textures/earth/clouds_1k.jpg'
+                },
+                clouds2k: {
+                    type: 'tiff',
+                    path: './textures/earth/clouds_2k.tif'
+                },
             }
         }
 
         this.stars = { name: '', texture: null }
         this.color = { name: '', texture: null }
         this.nightlights = { name: '', texture: null }
+        this.clouds = { name: '', texture: null }
         this.setStars('stars8k')
         this.setEarthColor('color10k')
-        this.setEarthNightlights('nightlightsSmall')
+        this.setEarthNightlights('nightlights10k')
+        this.setClouds('clouds2k')
+
 
         // Shader uniforms
         this.atmosphere = {
@@ -137,6 +146,13 @@ export default class Earth {
             transparent: true,
         })
 
+        // Clouds
+        this.cloudMaterial = new THREE.MeshBasicMaterial({
+            map: this.clouds.texture,
+            alphaMap: this.clouds.texture,
+            transparent: true,
+        })
+
         // Geometry
         this.groundSegments = 64
         this.groundGeometry = this.newGroundGeometry()
@@ -145,8 +161,11 @@ export default class Earth {
         this.skyGeometry = this.newSkyGeometry()
 
         // Meshes
+        this.cloudScale = 0.2
         this.skyMesh = new THREE.Mesh(this.skyGeometry, this.skyMaterial)
         this.groundMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
+        this.cloudMesh = new THREE.Mesh(this.groundGeometry, this.cloudMaterial)
+        this.cloudMesh.scale.setScalar(this.cloudScale / 100.0 + 1.0)
 
         this.addDebug()
     }
@@ -154,6 +173,7 @@ export default class Earth {
     addEarth(scene) {
         scene.add(this.skyMesh)
         scene.add(this.groundMesh)
+        scene.add(this.cloudMesh)
     }
 
     setStars(stars) {
@@ -194,6 +214,20 @@ export default class Earth {
         this.nightlights.colorSpace = THREE.SRGBColorSpace
     }
 
+    setClouds(clouds) {
+        if (this.clouds.texture) this.clouds.texture.dispose()
+        this.clouds = {
+            name: clouds,
+            texture: this.#loadResource(this.textures.clouds[clouds], (texture, resource) => {
+                console.log(`Clouds loaded: ${clouds}`)
+                texture.colorSpace = THREE.SRGBColorSpace
+                this.cloudMaterial.map = texture
+                this.cloudMaterial.alphaMap = texture
+                this.cloudMaterial.needsUpdate = true
+            })
+        }
+    }
+
     #loadResource(resource, callback = () => { }) {
         return this.loaders[resource.type].load(
             resource.path,
@@ -220,6 +254,14 @@ export default class Earth {
         })
         folder.add(this.nightlights, 'name').options(Object.keys(this.textures.nightlights)).name('Nightlights').onFinishChange((value) => {
             this.setEarthNightlights(value)
+        })
+        folder.add(this.clouds, 'name').options(Object.keys(this.textures.clouds)).name('Clouds').onFinishChange((value) => {
+            this.setClouds(value)
+        })
+
+        folder.add(this, 'cloudScale').min(0).max(5).step(0.1).onChange((scale) => {
+            const cloudScale = scale / 100.0 + 1.0
+            this.cloudMesh.scale.setScalar(cloudScale)
         })
 
         const atmoFolder = folder.addFolder('Atmosphere')
