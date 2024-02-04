@@ -96,7 +96,8 @@ const renderer = viz.renderer
 // const bloomLayer = new THREE.Layers();
 // bloomLayer.set( BLOOM_SCENE );
 
-const world = new THREE.Group();
+// const world = new THREE.Group();
+const world = viz.world
 
 /**
  * Camera
@@ -244,32 +245,33 @@ atmoFolder.add(atmosphere, 'outerRadius').min(0).max(1000).step(0.1).onChange((r
 atmoFolder.add(atmosphere, 'scaleDepth').min(0).max(1).step(0.001)
 atmoFolder.add(atmosphere, 'mieScaleDepth').min(0).max(1).step(0.001)
 
-const uniforms = {
-	v3LightPosition: { value: new THREE.Vector3(1e8, 0, 1e8).normalize() },
-	v3InvWavelength: { value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)), },
-	fCameraHeight: { value:	0, },
-	fCameraHeight2: { value:	0, },
-	fInnerRadius: { value:	atmosphere.innerRadius, },
-	fInnerRadius2: { value:	atmosphere.innerRadius * atmosphere.innerRadius, },
-	fOuterRadius: { value:	atmosphere.outerRadius, },
-	fOuterRadius2: { value:	atmosphere.outerRadius * atmosphere.outerRadius, },
-	fKrESun: { value:	atmosphere.Kr * atmosphere.ESun, },
-	fKmESun: { value:	atmosphere.Km * atmosphere.ESun, },
-	fKr4PI: { value:	atmosphere.Kr * 4.0 * Math.PI, },
-	fKm4PI: { value:	atmosphere.Km * 4.0 * Math.PI, },
-	fScale: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius), },
-	fScaleDepth: { value:	atmosphere.scaleDepth, },
-	fScaleOverScaleDepth: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius) / atmosphere.scaleDepth, },
-	g: { value:	atmosphere.g, },
-	g2: { value:	atmosphere.g * atmosphere.g, },
-	nSamples: { value:	3, },
-	fSamples: { value:	3.0, },
-	tDiffuse: { value:	earthTexture.color, },
-	tDiffuseNight: { value:	earthTexture.nightlights, },
-	tDisplacement: { value:	0, },
-	tSkyboxDiffuse: { value:	0, },
-	fNightScale: { value:	1, }
-}
+let uniforms = viz.earth.uniforms
+// uniforms = {
+// 	v3LightPosition: { value: new THREE.Vector3(1e8, 0, 1e8).normalize() },
+// 	v3InvWavelength: { value:	new THREE.Vector3(1 / Math.pow(atmosphere.wavelength[0], 4), 1 / Math.pow(atmosphere.wavelength[1], 4), 1 / Math.pow(atmosphere.wavelength[2], 4)), },
+// 	fCameraHeight: { value:	0, },
+// 	fCameraHeight2: { value:	0, },
+// 	fInnerRadius: { value:	atmosphere.innerRadius, },
+// 	fInnerRadius2: { value:	atmosphere.innerRadius * atmosphere.innerRadius, },
+// 	fOuterRadius: { value:	atmosphere.outerRadius, },
+// 	fOuterRadius2: { value:	atmosphere.outerRadius * atmosphere.outerRadius, },
+// 	fKrESun: { value:	atmosphere.Kr * atmosphere.ESun, },
+// 	fKmESun: { value:	atmosphere.Km * atmosphere.ESun, },
+// 	fKr4PI: { value:	atmosphere.Kr * 4.0 * Math.PI, },
+// 	fKm4PI: { value:	atmosphere.Km * 4.0 * Math.PI, },
+// 	fScale: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius), },
+// 	fScaleDepth: { value:	atmosphere.scaleDepth, },
+// 	fScaleOverScaleDepth: { value:	1 / (atmosphere.outerRadius - atmosphere.innerRadius) / atmosphere.scaleDepth, },
+// 	g: { value:	atmosphere.g, },
+// 	g2: { value:	atmosphere.g * atmosphere.g, },
+// 	nSamples: { value:	3, },
+// 	fSamples: { value:	3.0, },
+// 	tDiffuse: { value:	earthTexture.color, },
+// 	tDiffuseNight: { value:	earthTexture.nightlights, },
+// 	tDisplacement: { value:	0, },
+// 	tSkyboxDiffuse: { value:	0, },
+// 	fNightScale: { value:	1, }
+// }
 
 // Material
 const earthMaterial = new THREE.MeshStandardMaterial()
@@ -293,18 +295,19 @@ earthMaterial.roughnessMap = earthTexture.roughness
 // gui.add(earthMesh, 'visible').name('Earth')
 
 // Ground 
-const groundMaterial = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: GroundFromSpaceVertex,
-    fragmentShader: GroundFromSpaceFragment,
-})
-const groundMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(atmosphere.innerRadius, 32, 32),
-    groundMaterial,
-    // earthMaterial,
-)
+// const groundMaterial = new THREE.ShaderMaterial({
+//     uniforms: uniforms,
+//     vertexShader: GroundFromSpaceVertex,
+//     fragmentShader: GroundFromSpaceFragment,
+// })
+// const groundMesh = new THREE.Mesh(
+//     new THREE.SphereGeometry(atmosphere.innerRadius, 32, 32),
+//     groundMaterial,
+//     // earthMaterial,
+// )
+const groundMesh = viz.earth.groundMesh
 world.add(groundMesh)
-world.rotateX(Math.PI / 2)
+// world.rotateX(Math.PI / 2)
 gui.add(groundMesh, 'visible').name('Ground')
 
 // Atmosphere
@@ -317,10 +320,13 @@ const skyMaterial = new THREE.ShaderMaterial({
     transparent: true,
 })
 
-const skyMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
-    skyMaterial,
-)
+// const skyMesh = new THREE.Mesh(
+//     // new THREE.SphereGeometry(atmosphere.outerRadius, 256, 256),
+//     // skyMaterial,
+//     viz.earth.skyGeometry,
+//     viz.earth.skyMaterial
+// )
+const skyMesh = viz.earth.skyMesh
 world.add(skyMesh)
 gui.add(skyMesh, 'visible').name('Sky')
 

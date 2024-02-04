@@ -23,6 +23,8 @@ export default class Visualizer {
 
         // Scene 
         this.scene = new THREE.Scene()
+        this.world = new THREE.Group()
+        this.world.rotateX(Math.PI / 2)
 
         // Camera
         const fov = 75
@@ -60,7 +62,7 @@ export default class Visualizer {
         this.sizes.height = window.innerHeight
 
         // Update camera
-        camera = this.getActiveCamera()
+        let camera = this.getActiveCamera()
         camera.aspect = this.sizes.width / this.sizes.height
         camera.updateProjectionMatrix()
 
@@ -88,6 +90,7 @@ export default class Visualizer {
         camera.position.y = 0
         camera.position.z = 0
         camera.lookAt(0,0,0)
+        camera.up.set(0, 0, 1)
         this.scene.add(camera)
     }
 

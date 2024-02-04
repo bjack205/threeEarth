@@ -28,6 +28,7 @@ uniform sampler2D tDiffuse;  // added
 varying vec3 v3Direction;
 varying vec3 c0;
 varying vec3 c1;
+varying float vLightAngle; 
 varying vec3 vNormal;
 varying vec2 vUv;
 
@@ -76,11 +77,12 @@ void main(void)
 	// Now loop through the sample rays
 	vec3 v3FrontColor = vec3(0.0, 0.0, 0.0);
 	vec3 v3Attenuate;
+	float fScatter;
 	for(int i=0; i<nSamples; i++)
 	{
 		float fHeight = length(v3SamplePoint);
 		float fDepth = exp(fScaleOverScaleDepth * (fInnerRadius - fHeight));
-		float fScatter = fDepth*fTemp - fCameraOffset;
+		fScatter = fDepth*fTemp - fCameraOffset;
 		v3Attenuate = exp(-fScatter * (v3InvWavelength * fKr4PI + fKm4PI));
 		v3FrontColor += v3Attenuate * (fDepth * fScaledLength);
 		v3SamplePoint += v3SampleRay;
@@ -99,4 +101,5 @@ void main(void)
 	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // modified
 	vUv = uv;          // get UV coords from ThreeJS 
 	vNormal = normal;  // get normal coords from ThreeJS 
+	vLightAngle = exp(-fScatter); 
 }
