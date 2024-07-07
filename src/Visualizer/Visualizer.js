@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import Earth from './Earth'
+import VizTools from './VizTools'
 
 export default class Visualizer {
     constructor(canvas=document.querySelector('canvas.webgl')) {
@@ -56,6 +57,9 @@ export default class Visualizer {
         this.earth.addEarth(this.earthGroup)
         this.world.add(this.earthGroup)
         this.scene.add(this.world)
+
+        // Tools
+        this.tools = new VizTools()
 
         // Controls
         this.controls = new OrbitControls(this.camera, this.canvas)
