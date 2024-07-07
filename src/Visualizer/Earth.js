@@ -84,10 +84,10 @@ export default class Earth {
         this.color = { name: '', texture: null }
         this.nightlights = { name: '', texture: null }
         this.clouds = { name: '', texture: null }
-        this.setStars('stars8k')
-        this.setEarthColor('color10k')
-        this.setEarthNightlights('nightlights10k')
-        this.setClouds('clouds2k')
+        this.setStars('stars4k')
+        this.setEarthColor('colorSmall')
+        this.setEarthNightlights('nightlightsSmall')
+        this.setClouds('clouds1k')
 
 
         // Shader uniforms
@@ -96,7 +96,7 @@ export default class Earth {
             Km: 0.0010,
             ESun: 20.0,
             g: -0.950,
-            innerRadius: 50,
+            innerRadius: 6371,
             atmoScaling: 2.5, 
             outerRadius: 102.5,
             wavelength: [0.650, 0.570, 0.475],
@@ -320,6 +320,10 @@ export default class Earth {
 
     newSkyGeometry() {
         return new THREE.SphereGeometry(this.atmosphere.outerRadius, this.skySegments, this.skySegments)
+    }
+
+    getEarthRadius() {
+        return this.atmosphere.innerRadius
     }
 
 }

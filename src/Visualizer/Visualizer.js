@@ -35,8 +35,8 @@ export default class Visualizer {
         // Camera
         const fov = 75
         const aspectRatio = this.sizes.width / this.sizes.height
-        const near = 1
-        const far = 2000
+        const near = 50 
+        const far = 40000
         this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far)
         this.cameraInit(this.camera)
         this.cameraDebug(this.camera)
@@ -133,7 +133,7 @@ export default class Visualizer {
     }
 
     cameraInit(camera) {
-        camera.position.x = 180
+        camera.position.x = 12000
         camera.position.y = 0
         camera.position.z = 0
         camera.lookAt(0,0,0)
@@ -149,7 +149,7 @@ export default class Visualizer {
         cameraDebug.add(camera, 'near').min(1).max(2000).step(1).name('Near').onFinishChange(() => {
             camera.updateProjectionMatrix()
         })
-        cameraDebug.add(camera, 'far').min(1).max(2000).step(1).name('Far').onFinishChange(() => {
+        cameraDebug.add(camera, 'far').min(1).max(50000).step(1).name('Far').onFinishChange(() => {
             camera.updateProjectionMatrix()
         })
     }
