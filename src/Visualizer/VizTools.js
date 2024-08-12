@@ -2,35 +2,35 @@ import * as THREE from 'three'
 
 // ConeGeometry along Z axis, centered at the tip of the cone with +Z point towards base
 function ConeGeometryZ(height, radius, segments) {
-  // ConeGeometry is oriented along Y axis
-  const geometry = new THREE.ConeGeometry(radius, height, segments)
-  geometry.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2))
-  geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, height / 2))
-  return geometry
+    // ConeGeometry is oriented along Y axis
+    const geometry = new THREE.ConeGeometry(radius, height, segments)
+    geometry.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2))
+    geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, height / 2))
+    return geometry
 }
 
 
 
 function deg2rad(deg) {
-  return deg * Math.PI / 180
+    return deg * Math.PI / 180
 }
 function rad2deg(rad) {
-  return rad * 180 / Math.PI
+    return rad * 180 / Math.PI
 }
 
 export default class VizTools {
-    constructor(canvas=document.querySelector('canvas.webgl')) {
+    constructor(canvas = document.querySelector('canvas.webgl')) {
         this.canvas = canvas
     }
 
     newTargetDisk(earthRadius, targetRadius, lat, long) {
         const targetGeometry = new THREE.CircleGeometry(1, 32)
-        const targetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false, side: THREE.FrontSide }) 
+        const targetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: false, side: THREE.FrontSide })
         const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial)
         const targetData = { earthRadius, lat, long, radius: targetRadius }
-        const target = {mesh: targetMesh, data: targetData}
+        const target = { mesh: targetMesh, data: targetData }
         this.#setTargetPosition(target)
-        return target 
+        return target
     }
 
     #setTargetPosition(target) {
@@ -62,7 +62,7 @@ export default class VizTools {
         material.side = THREE.DoubleSide
         const coneMesh = new THREE.Mesh(geometry, material)
         const coneData = { height, angle }
-        const cone = {mesh: coneMesh, data: coneData}
+        const cone = { mesh: coneMesh, data: coneData }
         this.#updateCone(cone)
         return cone
     }
@@ -77,26 +77,27 @@ export default class VizTools {
     addConeDebug(gui, cone) {
         gui.add(cone.mesh, 'visible').name('Camera Cone')
         gui.add(cone.data, 'height').step(1).max(1000).min(100).onChange((value) => {
-            this.#updateCone()
+            this.#updateCone(cone)
         })
         gui.add(cone.data, 'angle').step(1).max(180).min(1).onChange((value) => {
-            this.#updateCone()
+            this.#updateCone(cone)
         })
+        gui.add(cone.mesh.position, 'x').step(0.1).max(3).min(-3)
     }
 
-    addOrbit(radius, azimuth, elevation) {
+    addOrbit(radius, azimuth, elevation, points = 500) {
         const curve = new THREE.EllipseCurve(
-            0.0, 0.0, 
+            0.0, 0.0,
             radius, radius,
             0, 2 * Math.PI,
             false,
             0
         )
-        const geom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(50))
+        const geom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(points))
         const mat = new THREE.LineBasicMaterial({ color: 0xff0000 })
         const ellipseMesh = new THREE.Line(geom, mat)
         const ellipseData = { radius, azimuth, elevation }
-        const ellipse = {mesh: ellipseMesh, data: ellipseData, curve: curve}
+        const ellipse = { mesh: ellipseMesh, data: ellipseData, curve: curve, points: points }
         this.#updateOrbit(ellipse)
         return ellipse
     }
@@ -105,7 +106,7 @@ export default class VizTools {
         ellipse.curve.xRadius = ellipse.data.radius
         ellipse.curve.yRadius = ellipse.data.radius
         ellipse.mesh.geometry.dispose()
-        ellipse.mesh.geometry.setFromPoints(ellipse.curve.getPoints(50))
+        ellipse.mesh.geometry.setFromPoints(ellipse.curve.getPoints(ellipse.points))
         ellipse.mesh.setRotationFromEuler(new THREE.Euler(0, ellipse.data.elevation, ellipse.data.azimuth, 'ZYX'))
     }
 
