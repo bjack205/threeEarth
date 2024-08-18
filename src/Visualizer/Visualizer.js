@@ -217,6 +217,10 @@ export default class Visualizer {
     getObject(query) {
         if ("key" in query) {
             return this.objects[query.key]
+        } else if ("mesh" in query) {
+            // TODO: load mesh from JSON object
+        } else if ("name" in query) {
+            // TODO: search for object in tree by name
         }
     }
 }

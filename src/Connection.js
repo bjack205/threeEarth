@@ -48,6 +48,22 @@ export default class Connection {
       const obj = this.viz.getObject(msg)
       this.setQuaternion(obj, msg.data)
     }
+    if (msg.type == "set_scale" && msg.data) {
+      const obj = this.viz.getObject(msg)
+      obj.scale.fromArray(msg.data) 
+    }
+    if (msg.type == "add_child" && msg.parent && msg.child) {
+      const parent = this.viz.getObject(msg.parent)
+      const child = this.viz.getObject(msg.child)
+      parent.add(child)
+    }
+    if (msg.type == "set_color" && msg.color && msg.object) {
+      const object = this.viz.getObject(msg)
+      const color = new THREE.Color() // TODO: read from msg.color 
+      if (object.isMesh) {
+        object.material.color.set(color)
+      }
+    }
   }
 
   setQuaternion(object, data) {
