@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { ObjectLoader } from 'three';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import CameraControls from 'camera-controls'
@@ -78,6 +79,11 @@ export default class Visualizer {
         // Debug
         this.debugObject.earthRotation = 0.0
         this.addDebug()
+
+        // Loaders
+        this.loaders = {
+            "json": new THREE.ObjectLoader(),
+        }
 
         // Object Cache
         this.objects = {
@@ -215,12 +221,15 @@ export default class Visualizer {
     }
 
     getObject(query) {
-        if ("key" in query) {
-            return this.objects[query.key]
-        } else if ("mesh" in query) {
-            // TODO: load mesh from JSON object
-        } else if ("name" in query) {
+        if (query in this.objects) {
+            return this.objects[query]
+        } else if (query["name"] && this.objects[query.name]) {
+            return this.objects[query.name]
+        } else if (query["json"]) {
+            return this.loaders["json"].parse(query.json)
+        } else if (query["name"]) {
             // TODO: search for object in tree by name
         }
+        console.log("Unable to find object with query: ", query)
     }
 }

@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { ObjectLoader, MaterialLoader, BufferGeometryLoader } from 'three';
+import * as Geometries from 'three/src/geometries/Geometries.js';
 
 export default class Connection {
   constructor(viz, url, timeout = 1000) {
@@ -6,6 +8,10 @@ export default class Connection {
     this.url = url
     this.timeout = timeout
     this.connectWebsocket(url)
+    this.loaders = {
+      "geometry": new THREE.BufferGeometryLoader(),
+      "material": new THREE.MaterialLoader(),
+    }
   }
 
   connectWebsocket(url) {
@@ -35,35 +41,119 @@ export default class Connection {
       msg = JSON.parse(event.data)
     } catch (err) {
       console.log("Unable to parse JSON. Got error: ", err)
+      return
     }
 
     // Handle the command
-    if (msg.type == "set_position") {
-      console.log("Setting Position")
-      const obj = this.viz.getObject(msg)
-      this.setPosition(obj, msg.data)
+    if ("add_geometry" in msg) {
+      let name = msg.add_geometry.name;
+      console.log("Adding Geometry with name ", name)
+      this.viz.objects[name] = this.parseGeometry(msg.add_geometry);
     }
-    if (msg.type == "set_quat") {
-      console.log("Setting Quaternion")
-      const obj = this.viz.getObject(msg)
-      this.setQuaternion(obj, msg.data)
+    if ("add_material" in msg) {
+      let name = msg.add_material.name;
+      console.log("Adding material to name ", name)
+      const loader = this.loaders["material"];
+      this.viz.objects[name] = loader.parse(msg.add_material);
     }
-    if (msg.type == "set_scale" && msg.data) {
-      const obj = this.viz.getObject(msg)
-      obj.scale.fromArray(msg.data) 
-    }
-    if (msg.type == "add_child" && msg.parent && msg.child) {
-      const parent = this.viz.getObject(msg.parent)
-      const child = this.viz.getObject(msg.child)
-      parent.add(child)
-    }
-    if (msg.type == "set_color" && msg.color && msg.object) {
-      const object = this.viz.getObject(msg)
-      const color = new THREE.Color() // TODO: read from msg.color 
-      if (object.isMesh) {
-        object.material.color.set(color)
+    if ("add_mesh" in msg) {
+      let cmd = msg.add_mesh;
+      let name = cmd.name;
+      if (cmd.geometry && cmd.material) {
+        console.log("Adding mesh (simple) with name ", name);
+        const geometry = this.viz.getObject(cmd.geometry);
+        const material = this.viz.getObject(cmd.material);
+        if (geometry && material) {
+          if (name in this.viz.objects) {
+            console.log(this.viz.objects[name]);
+            const prevObject = this.viz.objects[name];
+            // TODO: handle cleanup
+            prevObject.removeFromParent();
+          }
+          const object = new THREE.Mesh(geometry, material);
+
+          // Add parent
+          this.viz.objects[name] = object;
+          if ("parent" in cmd) {
+            const parent = this.viz.getObject(cmd.parent);
+            parent.add(object);
+          }
+        } else {
+          console.log("Adding mesh failed! Failed to find or add the material or geometry")
+        }
       }
     }
+    if ("add_child" in msg) {
+      let cmd = msg.add_child;
+      console.log(`Adding ${cmd.child} to ${cmd.parent}`)
+      const parent = this.viz.getObject(cmd.parent)
+      const child = this.viz.getObject(cmd.child)
+      console.log("parent: ", parent)
+      console.log("child: ", child)
+      parent.add(child)
+    }
+    if ("set_props" in msg) {
+      const object = this.viz.getObject(msg.set_props)
+      const props = msg.set_props;
+      if ("position" in props) {
+        console.log("Setting Position of ", props.name)
+        object.position.fromArray(props.position)
+      }
+      if ("quaternion" in props) {
+        console.log("Setting Quaternion of ", props.name)
+        object.quaternion.fromArray(props.quaternion)
+      }
+      if ("scale" in props) {
+        object.scale.fromArray(props.scale)
+      }
+
+      let material;
+      if (object.isMesh) {
+        material = object.material
+      } else if (object.isMaterial) {
+        material = object;
+      }
+      if ("color" in props && material) {
+        material.color.fromArray(props.color)
+      }
+      if ("transparent" in props && material) {
+        console.log("Setting transparent")
+        material.transparent = props.transparent;
+        material.needsUpdate = true
+      }
+      if ("opacity" in props && material) {
+        console.log("Setting opacity")
+        material.opacity = props.opacity;
+        material.needsUpdate = true
+      }
+    }
+  }
+
+  parseGeometry(data) {
+    let geometry = {};
+    switch (data.type) {
+
+      case 'BufferGeometry':
+      case 'InstancedBufferGeometry':
+
+        const bufferGeometryLoader = this.loaders["geometry"];
+        geometry = bufferGeometryLoader.parse(data);
+        break;
+
+      default:
+
+        if (data.type in Geometries) {
+
+          geometry = Geometries[data.type].fromJSON(data);
+
+        } else {
+
+          console.warn(`THREE.ObjectLoader: Unsupported geometry type "${data.type}"`);
+
+        }
+
+    }
+    return geometry;
   }
 
   setQuaternion(object, data) {
