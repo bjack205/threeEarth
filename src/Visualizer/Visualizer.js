@@ -10,7 +10,7 @@ import VizTools from './VizTools'
 CameraControls.install({ THREE: THREE })
 
 export default class Visualizer {
-    constructor(canvas = document.querySelector('canvas.webgl')) {
+    constructor(canvas = document.querySelector('canvas.webgl'), shadows=false) {
         this.canvas = canvas
 
         // Stats
@@ -33,8 +33,13 @@ export default class Visualizer {
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas
         })
-        this.rendererInit(this.renderer)
+        this.rendererInit(this.renderer, shadows)
         this._needs_update = true
+
+        // Listeners
+        window.addEventListener('resize', () => {
+            this.resize()
+        })
 
         // Scene 
         this.scene = new THREE.Scene()
@@ -59,7 +64,17 @@ export default class Visualizer {
         this.directionalLight = new THREE.DirectionalLight('#ffffff', 3.0)
         this.lightsInit(this.ambientLight, this.directionalLight)
         this.lightsDebug(this.ambientLight, this.directionalLight)
+        this.directionalLight.castShadow = shadows;
 
+        // Object Cache
+        this.objects = {
+            "controls": this.controls,
+            "earth": this.earthGroup,
+            "camera": this.camera,
+            "ambientLight": this.ambientLight,
+            "directionalLight": this.directionalLight,
+            "renderer": this.renderer
+        }
         return
 
         // Earth
@@ -70,31 +85,16 @@ export default class Visualizer {
         this.world.add(this.earthGroup)
         this.scene.add(this.world)
 
-        // Tools
-        this.tools = new VizTools()
-
-        // Listeners
-        window.addEventListener('resize', () => {
-            this.resize()
-        })
-
         // Debug
         this.debugObject.earthRotation = 0.0
         this.addDebug()
 
+        // Tools
+        this.tools = new VizTools()
+
         // Loaders
         this.loaders = {
             "json": new THREE.ObjectLoader(),
-        }
-
-        // Object Cache
-        this.objects = {
-            "controls": this.controls,
-            "earth": this.earthGroup,
-            "camera": this.camera,
-            "ambientLight": this.ambientLight,
-            "directionalLight": this.directionalLight,
-            "renderer": this.renderer
         }
 
         console.log('Here starts a great experience')
@@ -111,17 +111,19 @@ export default class Visualizer {
 
     resize() {
         // Update sizes
-        this.sizes.width = window.innerWidth
-        this.sizes.height = window.innerHeight
+        this.sizes.width = window.innerWidth;
+        this.sizes.height = window.innerHeight;
 
         // Update camera
-        let camera = this.getActiveCamera().camera
-        camera.aspect = this.sizes.width / this.sizes.height
-        camera.updateProjectionMatrix()
+        let camera = this.getActiveCamera().camera;
+        camera.aspect = this.sizes.width / this.sizes.height;
+        camera.updateProjectionMatrix();
 
         // Update renderer
-        this.renderer.setSize(this.sizes.width, this.sizes.height)
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        this.renderer.setSize(this.sizes.width, this.sizes.height);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        this._needs_update = true;
     }
 
 
@@ -129,10 +131,13 @@ export default class Visualizer {
 
     }
 
-    rendererInit(renderer) {
+    rendererInit(renderer, shadows) {
         renderer.setSize(this.sizes.width, this.sizes.height)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.outputColorSpace = THREE.SRGBColorSpace
+
+        renderer.shadowMap.enabled = shadows;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
     }
 
     cameraInit(camera) {
@@ -161,18 +166,19 @@ export default class Visualizer {
     }
 
     lightsInit(ambientLight, directionalLight) {
-        directionalLight.position.set(100, 0, 0)
+        directionalLight.position.set(0, 0, 30)
         this.scene.add(ambientLight)
         this.scene.add(directionalLight)
     }
 
     lightsDebug(ambientLight, directionalLight) {
         const lightsDebug = this.gui.addFolder('Lights')
-        lightsDebug.add(ambientLight, 'intensity').min(0).max(1).step(0.01).name('Ambient Intensity')
-        lightsDebug.add(directionalLight, 'intensity').min(0).max(10).step(0.01).name('Sun Intensity')
-        lightsDebug.add(directionalLight.position, 'x').min(-1).max(1).step(0.01).name('Sun X')
-        lightsDebug.add(directionalLight.position, 'y').min(-1).max(1).step(0.01).name('Sun Y')
-        lightsDebug.add(directionalLight.position, 'z').min(-1).max(1).step(0.01).name('Sun Z')
+        const update = () => { this.setUpdate(); }
+        lightsDebug.add(ambientLight, 'intensity').min(0).max(1).step(0.01).name('Ambient Intensity').onChange(update)
+        lightsDebug.add(directionalLight, 'intensity').min(0).max(10).step(0.01).name('Sun Intensity').onChange(update)
+        lightsDebug.add(directionalLight.position, 'x').min(-100).max(100).step(0.1).name('Sun X').onChange(update)
+        lightsDebug.add(directionalLight.position, 'y').min(-100).max(100).step(0.1).name('Sun Y').onChange(update)
+        lightsDebug.add(directionalLight.position, 'z').min(-100).max(100).step(0.1).name('Sun Z').onChange(update)
     }
 
     addDebug() {
@@ -203,6 +209,8 @@ export default class Visualizer {
         }
         console.log("Unable to find object with query: ", query)
     }
+
+    setUpdate() { this._needs_update = true; }
 
     run() {
         this.controls.update();

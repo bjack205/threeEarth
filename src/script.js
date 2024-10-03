@@ -4,7 +4,8 @@ CameraControls.install( { THREE: THREE } );
 import Visualizer from './Visualizer/Visualizer'
 
 const canvas = document.querySelector('canvas.webgl')
-const viz = new Visualizer(canvas)
+const use_shadows = false;
+const viz = new Visualizer(canvas, use_shadows);
 
 // Set up scene
 const scene = viz.scene; // new THREE.Scene();
@@ -13,14 +14,33 @@ const cameraControls = viz.controls;
 
 const mesh = new THREE.Mesh(
 	new THREE.BoxGeometry( 1, 1, 1 ),
-	new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } )
+	new THREE.MeshLambertMaterial( { color: 0xff0000, wireframe: false } )
 );
 scene.add( mesh );
-cameraControls.setLookAt(0, 5, 0, 0, 0, 0);
+mesh.castShadow = use_shadows;
+mesh.position.z = 2;
+cameraControls.setLookAt(2, 5, 3, 0, 0, 0);
 
-const gridHelper = new THREE.GridHelper( 50, 50 );
-gridHelper.position.y = - 1;
-scene.add( gridHelper );
+scene.add(new THREE.AxesHelper())
+
+if (use_shadows) {
+  viz.directionalLight.shadow.camera.left = -10
+  viz.directionalLight.shadow.camera.right = +10
+  viz.directionalLight.shadow.camera.top = -10
+  viz.directionalLight.shadow.camera.bottom = +10
+  viz.directionalLight.shadow.camera.updateProjectionMatrix()
+  scene.add(new THREE.CameraHelper(viz.directionalLight.shadow.camera));
+}
+
+// Floor
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(10, 10),
+  new THREE.MeshLambertMaterial({ color: 0x333333, wireframe: false })
+);
+floor.receiveShadow = use_shadows;
+scene.add(floor);
+
+
 
 // Start rendering the visualizer
 viz.run();
