@@ -29,30 +29,38 @@ export default class Visualizer {
         }
 
         // Renderer
+        this.clock = new THREE.Clock()
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas
         })
         this.rendererInit(this.renderer)
-        this._did_update = false
+        this._needs_update = true
 
         // Scene 
         this.scene = new THREE.Scene()
 
         // Camera
-        const fov = 30
+        const fov = 60
         const aspectRatio = this.sizes.width / this.sizes.height
         const near = 0.10
-        const far = 40000
+        const far = 100 // 40000
         this.cameraGroup = new THREE.Group()
         this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far)
         this.cameraInit(this.camera)
         this.cameraDebug(this.camera)
+
+        // Controls
+        // this.controls = new OrbitControls(this.camera, this.canvas)
+        this.controls = new CameraControls(this.camera, this.canvas)
+        this.controls.enableDamping = true
 
         // Lights
         this.ambientLight = new THREE.AmbientLight('#ffffff', 0.0)
         this.directionalLight = new THREE.DirectionalLight('#ffffff', 3.0)
         this.lightsInit(this.ambientLight, this.directionalLight)
         this.lightsDebug(this.ambientLight, this.directionalLight)
+
+        return
 
         // Earth
         this.world = new THREE.Group()
@@ -65,13 +73,7 @@ export default class Visualizer {
         // Tools
         this.tools = new VizTools()
 
-        // Controls
-        // this.controls = new OrbitControls(this.camera, this.canvas)
-        this.controls = new CameraControls(this.camera, this.canvas)
-        this.controls.enableDamping = true
-
         // Listeners
-        this.clock = new THREE.Clock()
         window.addEventListener('resize', () => {
             this.resize()
         })
@@ -122,40 +124,6 @@ export default class Visualizer {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     }
 
-    update() {
-        // const elapsedTime = this.clock.getElapsedTime()
-        const delta = this.clock.getDelta()
-
-        // Update controls
-        const did_controls_update = this.controls.update(delta)
-
-        // Update atmosphere
-        if (this.earth) {
-            const camera = this.getActiveCamera().camera
-            const uniforms = this.earth.uniforms
-            const cameraHeight = camera.position.length()
-            let earthPosition = new THREE.Vector3()
-            this.earth.groundMesh.getWorldPosition(earthPosition)
-
-            const lightDir = new THREE.Vector3().subVectors(
-                this.directionalLight.position, earthPosition
-            ).normalize()
-            uniforms.v3LightPosition.value = lightDir
-            uniforms.fCameraHeight.value = cameraHeight
-            uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
-        }
-
-        // Render
-        // if (did_controls_update || !this._did_update) {
-        // }
-        this.renderer.render(this.scene, this.camera)
-
-        // Stats
-        this.stats.update()
-
-        window.requestAnimationFrame(() => { this.update() })
-        // this._did_update = true
-    }
 
     destroy() {
 
@@ -179,13 +147,16 @@ export default class Visualizer {
     cameraDebug(camera) {
         const cameraDebug = this.gui.addFolder('Camera')
         cameraDebug.add(camera, 'fov').min(1).max(180).step(1).name('FOV').onFinishChange(() => {
-            camera.updateProjectionMatrix()
+            camera.updateProjectionMatrix();
+            this._needs_update = true;
         })
         cameraDebug.add(camera, 'near').min(1).max(2000).step(1).name('Near').onFinishChange(() => {
-            camera.updateProjectionMatrix()
+            camera.updateProjectionMatrix();
+            this._needs_update = true;
         })
         cameraDebug.add(camera, 'far').min(1).max(50000).step(1).name('Far').onFinishChange(() => {
-            camera.updateProjectionMatrix()
+            camera.updateProjectionMatrix();
+            this._needs_update = true;
         })
     }
 
@@ -231,5 +202,48 @@ export default class Visualizer {
             // TODO: search for object in tree by name
         }
         console.log("Unable to find object with query: ", query)
+    }
+
+    run() {
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+        this.update();
+    }
+
+    update() {
+        const delta = this.clock.getDelta()
+        const elapsedTime = this.clock.getElapsedTime()
+
+        // Update controls
+        const did_controls_update = this.controls.update(delta)
+
+        // Update atmosphere
+        if (this.earth) {
+            const camera = this.getActiveCamera().camera
+            const uniforms = this.earth.uniforms
+            const cameraHeight = camera.position.length()
+            let earthPosition = new THREE.Vector3()
+            this.earth.groundMesh.getWorldPosition(earthPosition)
+
+            const lightDir = new THREE.Vector3().subVectors(
+                this.directionalLight.position, earthPosition
+            ).normalize()
+            uniforms.v3LightPosition.value = lightDir
+            uniforms.fCameraHeight.value = cameraHeight
+            uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
+        }
+
+        // Render
+        if (did_controls_update || this._needs_update) {
+            this.renderer.render(this.scene, this.camera);
+		    console.log( 'rendered' );
+            this._needs_update = false;
+        }
+
+        // Stats
+        this.stats.update()
+
+        window.requestAnimationFrame(() => { this.update() })
+
     }
 }
