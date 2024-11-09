@@ -1,9 +1,11 @@
 using HTTP
 using HTTP.WebSockets
-using CoordinateTransformations, Rotations
+# using CoordinateTransformations, Rotations
 using LinearAlgebra
 using JSON
 using StaticArrays
+
+include("three.jl")
 
 connections = Set{HTTP.WebSocket}()
 host = "0.0.0.0"
@@ -25,12 +27,35 @@ length(connections)
 ws = first(connections)
 WebSockets.isclosed(ws)
 
-WebSockets.send(ws, "Hello from Julia!")
-
-
-pos = [7000, 0, -1]
-msg = Dict("type" => "set_position", "key" => "satellite", "data" => pos)
+# Set satellite position
+pos = [0, 0, 4]
+msg = Dict("set_props" => Dict("name" => "satellite", "position" => pos))
 WebSockets.send(ws, json(msg))
+
+# Set light position
+msg = Dict("set_props" => Dict("name" => "directionalLight", "position" => [40, 40, 10]))
+WebSockets.send(ws, json(msg))
+
+# Add material
+mat = MeshLambertMaterial(color=255)
+setopacity!(mat, 0.5)
+msg = Dict("add_material" => push!(lower(mat), "name"=>"mat1"))
+WebSockets.send(ws, json(msg))
+
+# Add Geometry
+geom = Cylinder()
+msg = Dict("add_geometry" => push!(lower(geom), "name"=>"cylinder1"))
+WebSockets.send(ws, json(msg))
+
+# Add Mesh 
+mesh = Dict("name" => "cylinderMesh", "material" => "mat1", "geometry" => "cylinder1")
+msg = Dict("add_mesh" => mesh)
+WebSockets.send(ws, json(msg))
+
+# Add mesh to scene
+msg = Dict("add_child" => Dict("parent" => "scene", "child" => "cylinderMesh"))
+WebSockets.send(ws, json(msg))
+
 
 getthreequat(q::QuatRotation) = SA[q.x, q.y, q.z, q.w]
 q = getthreequat(QuatRotation(RotX(deg2rad(30))))

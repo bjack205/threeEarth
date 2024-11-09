@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { ObjectLoader } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import CameraControls from 'camera-controls'
@@ -73,8 +74,16 @@ export default class Visualizer {
             "camera": this.camera,
             "ambientLight": this.ambientLight,
             "directionalLight": this.directionalLight,
-            "renderer": this.renderer
+            "renderer": this.renderer,
+            "scene": this.scene,
         }
+
+        // Loaders
+        this.loaders = {
+            "json": new THREE.ObjectLoader(),
+            "gltf": new GLTFLoader(),
+        }
+
         return
 
         // Earth
@@ -91,11 +100,6 @@ export default class Visualizer {
 
         // Tools
         this.tools = new VizTools()
-
-        // Loaders
-        this.loaders = {
-            "json": new THREE.ObjectLoader(),
-        }
 
         console.log('Here starts a great experience')
     }

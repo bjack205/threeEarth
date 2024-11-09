@@ -7,7 +7,9 @@ export default class Connection {
     this.viz = viz
     this.url = url
     this.timeout = timeout
-    this.connectWebsocket(url)
+    if (url) {
+      this.connectWebsocket(url)
+    }
     this.loaders = {
       "geometry": new THREE.BufferGeometryLoader(),
       "material": new THREE.MaterialLoader(),
@@ -47,12 +49,12 @@ export default class Connection {
     // Handle the command
     if ("add_geometry" in msg) {
       let name = msg.add_geometry.name;
-      console.log("Adding Geometry with name ", name)
+      console.log(`Adding Geometry with name '${name}'`)
       this.viz.objects[name] = this.parseGeometry(msg.add_geometry);
     }
     if ("add_material" in msg) {
       let name = msg.add_material.name;
-      console.log("Adding material to name ", name)
+      console.log(`Adding material '${name}'`)
       const loader = this.loaders["material"];
       this.viz.objects[name] = loader.parse(msg.add_material);
     }
@@ -77,6 +79,7 @@ export default class Connection {
           if ("parent" in cmd) {
             const parent = this.viz.getObject(cmd.parent);
             parent.add(object);
+            this.viz.setUpdate();
           }
         } else {
           console.log("Adding mesh failed! Failed to find or add the material or geometry")
@@ -91,6 +94,7 @@ export default class Connection {
       console.log("parent: ", parent)
       console.log("child: ", child)
       parent.add(child)
+      this.viz.setUpdate();
     }
     if ("set_props" in msg) {
       const object = this.viz.getObject(msg.set_props)
@@ -106,6 +110,7 @@ export default class Connection {
       if ("scale" in props) {
         object.scale.fromArray(props.scale)
       }
+      this.viz.setUpdate();
 
       let material;
       if (object.isMesh) {
@@ -115,16 +120,19 @@ export default class Connection {
       }
       if ("color" in props && material) {
         material.color.fromArray(props.color)
+        this.viz.setUpdate();
       }
       if ("transparent" in props && material) {
         console.log("Setting transparent")
         material.transparent = props.transparent;
         material.needsUpdate = true
+        this.viz.setUpdate();
       }
       if ("opacity" in props && material) {
         console.log("Setting opacity")
         material.opacity = props.opacity;
         material.needsUpdate = true
+        this.viz.setUpdate();
       }
     }
   }
@@ -173,5 +181,28 @@ export default class Connection {
     }
   }
 
+  loadGLTF(path, name, parent) {
+    const loader = this.viz.loaders.gltf;
+    loader.load(
+      path,
+      (gltf) => {
+        console.log(`Loaded GLTF Model with name '${name}'`)
+        // console.log(gltf)
+        // satelliteGroup.add(gltf.scene)
+        // satControls.fitToSphere(satModel)
+        const obj = gltf.scene;
+        this.viz.objects[name] = obj;
+        this.viz.objects[parent].add(obj);
+        this.viz.setUpdate();
+      },
+      (progress) => {
+        // console.log('GLTF progress')
+      },
+      (error) => {
+        console.log('GLTF error')
+        console.log(error)
+      }
+    )
+  }
 
 }
