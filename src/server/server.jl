@@ -38,6 +38,7 @@ WebSockets.send(ws, json(msg))
 
 # Add material
 mat = MeshLambertMaterial(color=255)
+lower(mat)
 setopacity!(mat, 0.5)
 msg = Dict("add_material" => push!(lower(mat), "name"=>"mat1"))
 WebSockets.send(ws, json(msg))

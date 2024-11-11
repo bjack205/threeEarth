@@ -2,6 +2,37 @@ import * as THREE from 'three'
 import { ObjectLoader, MaterialLoader, BufferGeometryLoader } from 'three';
 import * as Geometries from 'three/src/geometries/Geometries.js';
 
+export class SimpleConnection {
+  constructor(url, timeout = 1000) {
+    this.url = url
+    this.timeout = timeout
+    if (url) {
+      this.connectWebsocket(url)
+    }
+  }
+
+  connectWebsocket(url) {
+    this.websocket = new WebSocket(url)
+    this.websocket.onopen = () => {
+      console.log("Connected to the server");
+      let event = { type: "init", client: "visualizer" };
+      this.websocket.send(JSON.stringify(event));
+    }
+    this.websocket.onmessage = (e) => {
+      console.log("Got message: ", e.data);
+      // this.handleMessage(e);
+    }
+    this.websocket.onclose = (e) => {
+      console.log(`Socket is closed. Reconnect will be attempted in ${this.timeout} seconds. Reason:`, e.reason);
+      setTimeout(() => { this.connectWebsocket(url); }, this.timeout);
+    }
+    this.websocket.onerror = (err) => {
+      console.log("Socket encountered error. Closing Socket")
+      this.websocket.close();
+    }
+  }
+}
+
 export default class Connection {
   constructor(viz, url, timeout = 1000) {
     this.viz = viz
@@ -48,23 +79,78 @@ export default class Connection {
 
     // Handle the command
     if ("add_geometry" in msg) {
-      let name = msg.add_geometry.name;
-      console.log(`Adding Geometry with name '${name}'`)
-      this.viz.objects[name] = this.parseGeometry(msg.add_geometry);
+      this.addGeometry(msg.add_geometry);
     }
     if ("add_material" in msg) {
-      let name = msg.add_material.name;
-      console.log(`Adding material '${name}'`)
-      const loader = this.loaders["material"];
-      this.viz.objects[name] = loader.parse(msg.add_material);
+      this.addMaterial(msg.add_material);
+    }
+    if ("add_object" in msg) {
+      let cmd = msg.add_object;
+      let name = cmd.name;
+      let object_type = cmd.object_type;
+      let object;
+      // TODO: Get a parser function for each object type
+      if (object_type == "SimpleMeshRef") {
+        console.log("Adding Simple Mesh (Ref) with name ", name);
+        let geometry = this.viz.getObject(cmd.geometry_name);
+        let material = this.viz.getObject(cmd.material_name);
+        if (geometry && material) {
+          object = new THREE.Mesh(geometry, material);
+          object.name = name;
+          this.viz.objects[name] = object;
+        }
+      } else if (object_type == "SimpleMesh") {
+        console.log("Adding Simple Mesh with name ", name);
+        let geometry = this.addGeometry(cmd.geometry);
+        let material = this.addMaterial(cmd.material);
+        if (geometry && material) {
+          console.log("Successfully loaded geometry and material")
+          object = new THREE.Mesh(geometry, material);
+          object.name = name;
+          this.viz.objects[name] = object;
+        }
+      } else if (object_type == "GLTF") {
+        console.log("Adding GLTF with name ", name);
+        this.loadGLTF(cmd.path, name, cmd);
+      }
+    }
+    if ("add_animation" in msg) {
+      let cmd = msg.add_animation;
+      console.log("Adding Animation Clip with name", cmd.name);
+      const clip = THREE.AnimationClip.parse(cmd);
+      this.viz.objects[cmd.name] = clip;
+    }
+    if ("load_animation" in msg) {
+      let cmd = msg.load_animation;
+      console.log("Loading Animation")
+      let clip_name = cmd.clip_name;
+      let root_name = cmd.root_name;
+      let clip;
+      let root;
+      if (clip_name in this.viz.objects) {
+        clip = this.viz.objects[clip_name];
+      } else {
+        console.log("Failed to find clip with name ", clip_name)
+      }
+      if (root_name in this.viz.objects) {
+        root = this.viz.objects[root_name];
+      } else {
+        console.log("Failed to find object with name ", root_name)
+      }
+      this.viz.loadAnimation(this.viz.objects[clip_name], this.viz.objects[root_name]);
     }
     if ("add_mesh" in msg) {
       let cmd = msg.add_mesh;
       let name = cmd.name;
-      if (cmd.geometry && cmd.material) {
+      if (cmd.geometry_name && cmd.material_name) {
+        // This assumes that both the geometry and material are already loade
         console.log("Adding mesh (simple) with name ", name);
-        const geometry = this.viz.getObject(cmd.geometry);
-        const material = this.viz.getObject(cmd.material);
+
+        // Check if the geometry and material are already loaded
+        let geometry = this.viz.getObject(cmd.geometry_name);
+        let material = this.viz.getObject(cmd.material_name);
+
+        // Add mesh
         if (geometry && material) {
           if (name in this.viz.objects) {
             console.log(this.viz.objects[name]);
@@ -76,7 +162,7 @@ export default class Connection {
 
           // Add parent
           this.viz.objects[name] = object;
-          if ("parent" in cmd) {
+          if ("parent_name" in cmd) {
             const parent = this.viz.getObject(cmd.parent);
             parent.add(object);
             this.viz.setUpdate();
@@ -88,11 +174,9 @@ export default class Connection {
     }
     if ("add_child" in msg) {
       let cmd = msg.add_child;
-      console.log(`Adding ${cmd.child} to ${cmd.parent}`)
-      const parent = this.viz.getObject(cmd.parent)
-      const child = this.viz.getObject(cmd.child)
-      console.log("parent: ", parent)
-      console.log("child: ", child)
+      console.log(`Adding ${cmd.child_name} to ${cmd.parent_name}`)
+      const parent = this.viz.getObject(cmd.parent_name)
+      const child = this.viz.getObject(cmd.child_name)
       parent.add(child)
       this.viz.setUpdate();
     }
@@ -135,6 +219,25 @@ export default class Connection {
         this.viz.setUpdate();
       }
     }
+  }
+
+  addGeometry(data) {
+    let name = data.name;
+    console.log(`Adding Geometry with name '${name}'`)
+    const geometry =  this.parseGeometry(data);
+    geometry.name = name;
+    this.viz.objects[name] = geometry;
+    return geometry;
+  }
+
+  addMaterial(data) {
+    let name = data.name;
+    console.log(`Adding material '${name}'`)
+    const loader = this.loaders["material"];
+    const material = loader.parse(data);
+    material.name = name;
+    this.viz.objects[name] = material;
+    return material;
   }
 
   parseGeometry(data) {
@@ -192,7 +295,10 @@ export default class Connection {
         // satControls.fitToSphere(satModel)
         const obj = gltf.scene;
         this.viz.objects[name] = obj;
-        this.viz.objects[parent].add(obj);
+        if (parent && this.viz.objects[parent]) {
+          console.log(`Adding GLTF ${name} to ${parent}`)
+          this.viz.objects[parent].add(obj);
+        }
         this.viz.setUpdate();
       },
       (progress) => {

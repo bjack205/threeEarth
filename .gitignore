@@ -3,3 +3,4 @@ package-lock.json
 node_modules
 static/
 .venv
+__pycache__

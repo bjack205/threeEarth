@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "threepy"
+version = "0.1.0"
+description = ""
+authors = [{name = "Brian Jackson", email="bjack205@gmail.com"}]
+dependencies = [
+    "websockets",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

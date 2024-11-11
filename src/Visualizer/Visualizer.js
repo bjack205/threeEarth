@@ -11,7 +11,7 @@ import VizTools from './VizTools'
 CameraControls.install({ THREE: THREE })
 
 export default class Visualizer {
-    constructor(canvas = document.querySelector('canvas.webgl'), shadows=false) {
+    constructor(canvas = document.querySelector('canvas.webgl'), shadows = false) {
         this.canvas = canvas
 
         // Stats
@@ -66,6 +66,12 @@ export default class Visualizer {
         this.lightsInit(this.ambientLight, this.directionalLight)
         this.lightsDebug(this.ambientLight, this.directionalLight)
         this.directionalLight.castShadow = shadows;
+
+        // Animation
+        this.mixer = new THREE.AnimationMixer(this.scene)
+        this.active_action = null
+        this.animation_debug = null
+        this.time_controller = null
 
         // Object Cache
         this.objects = {
@@ -185,12 +191,27 @@ export default class Visualizer {
         lightsDebug.add(directionalLight.position, 'z').min(-100).max(100).step(0.1).name('Sun Z').onChange(update)
     }
 
+    animationDebug() {
+        if (this.animation_debug) {
+            this.animation_debug.destroy();
+        }
+        // Animation controls
+        const animDebug = this.gui.addFolder('Animation')
+        animDebug.add(this.active_action, 'play')
+        animDebug.add(this.active_action, 'reset')
+        animDebug.add(this.active_action, 'stop')
+        animDebug.add(this.active_action, 'paused')
+        animDebug.add(this.active_action, 'enabled')
+        animDebug.add(this.active_action, 'timeScale').min(-2).max(5).step(0.1)
+        this.animation_debug = animDebug
+        this.time_controller = animDebug.add(this.active_action, 'time').min(0).max(this.active_action.getClip().duration).step(0.1)
+    }
+
     addDebug() {
         const debug = this.gui.addFolder('Debug')
         debug.add(this.debugObject, 'earthRotation').min(-180).max(180).step(0.1).name('Earth Rotation').onChange(() => {
             this.world.rotation.z = THREE.MathUtils.degToRad(this.debugObject.earthRotation)
         })
-
         // axis helper
         let radius = 1;
         if (this.earth) {
@@ -212,6 +233,25 @@ export default class Visualizer {
             // TODO: search for object in tree by name
         }
         console.log("Unable to find object with query: ", query)
+        return null
+    }
+
+    loadAnimation(clip, object = this.scene) {
+        if (clip && object) {
+            // Uncache previous action
+            if (this.active_action) {
+                this.active_action.stop();
+                let active_clip = this.active_action.getClip();
+                this.mixer.uncacheAction(this.active_action);
+                this.mixer.uncacheClip(active_clip);
+                this.mixer.uncacheRoot(this.mixer.getRoot());
+            }
+            this.active_action = this.mixer.clipAction(clip, object);
+            this.active_action.play();
+            this.animationDebug();
+            return this.active_action
+        }
+        return null
     }
 
     setUpdate() { this._needs_update = true; }
@@ -245,10 +285,18 @@ export default class Visualizer {
             uniforms.fCameraHeight2.value = cameraHeight * cameraHeight
         }
 
+        if (this.active_action && this.active_action.enabled) {
+            this.mixer.update(delta)
+            if (this.time_controller) {
+                this.time_controller.updateDisplay()
+            }
+            this._needs_update = true;
+        }
+
         // Render
         if (did_controls_update || this._needs_update) {
             this.renderer.render(this.scene, this.camera);
-		    console.log( 'rendered' );
+            console.log('rendered');
             this._needs_update = false;
         }
 
