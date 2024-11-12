@@ -4,3 +4,4 @@ node_modules
 static/
 .venv
 __pycache__
+*.egg-info/

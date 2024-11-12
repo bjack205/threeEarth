@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { ObjectLoader } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
@@ -49,7 +48,7 @@ export default class Visualizer {
         const fov = 60
         const aspectRatio = this.sizes.width / this.sizes.height
         const near = 0.10
-        const far = 100 // 40000
+        const far = 40000
         this.cameraGroup = new THREE.Group()
         this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far)
         this.cameraInit(this.camera)
@@ -90,19 +89,24 @@ export default class Visualizer {
             "gltf": new GLTFLoader(),
         }
 
-        return
 
         // Earth
         this.world = new THREE.Group()
         this.earthGroup = new THREE.Group()
-        this.earthGroup.rotateX(Math.PI / 2)
-        this.earth == null
+        // this.earthGroup.rotateY(Math.PI / 2)
+
+        this.earth = new Earth(this.scene, this.gui, this)
+        this.earth.addEarth(this.earthGroup, {})
         this.world.add(this.earthGroup)
+        this.world.position.set(0, 0, 0)
         this.scene.add(this.world)
+        this.world.rotateX(Math.PI / 2)
 
         // Debug
+        return
         this.debugObject.earthRotation = 0.0
         this.addDebug()
+
 
         // Tools
         this.tools = new VizTools()
@@ -151,12 +155,12 @@ export default class Visualizer {
     }
 
     cameraInit(camera) {
-        camera.position.x = 12000
+        camera.position.x = 180
         camera.position.y = 0
         camera.position.z = 0
         camera.lookAt(0, 0, 0)
         camera.up.set(0, 0, 1)
-        this.cameraGroup.add(camera)
+        this.scene.add(camera)
     }
 
     cameraDebug(camera) {

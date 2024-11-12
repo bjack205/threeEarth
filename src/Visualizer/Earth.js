@@ -9,9 +9,10 @@ import GroundFromSpaceVertex from '../shaders/atmo/GroundFromSpace.vert'
 import GroundFromSpaceFragment from '../shaders/atmo/GroundFromSpace.frag'
 
 export default class Earth {
-    constructor(scene, gui) {
+    constructor(scene, gui, parent) {
         this.scene = scene
         this.gui = gui
+        this.parent = parent
 
         this.loaders = {}
         this.setLoaders()
@@ -40,6 +41,10 @@ export default class Earth {
                 colorSmall: {
                     type: 'texture',
                     path: './textures/earth/earth_color_small.jpg',
+                },
+                colorLarge: {
+                    type: 'texture',
+                    path: './textures/earth/earth_color_large.jpg',
                 },
                 color10k: {
                     type: 'tiff',
@@ -79,6 +84,10 @@ export default class Earth {
                 clouds2k: {
                     type: 'tiff',
                     path: './textures/earth/clouds_2k.tif'
+                },
+                cloudsLarge: {
+                    type: 'texture',
+                    path: './textures/earth/clouds_large.png'
                 },
             }
         }
@@ -249,6 +258,7 @@ export default class Earth {
             (texture) => {
                 // this.sourceLoaded(resource, file)
                 callback(texture, resource)
+                this.parent.setUpdate()
             }
         )
     }

@@ -114,6 +114,18 @@ export default class Connection {
         this.loadGLTF(cmd.path, name, cmd);
       }
     }
+    if ("camera_controls" in msg) {
+      let cmd = msg.camera_controls;
+      const controls_name = cmd.controls_name;
+      const controls = this.viz.getObject(controls_name);
+      const enable_transition = cmd.enable_transition;
+      if (camera) {
+        if ("setLookAt" in cmd) {
+          console.log("Setting LookAt")
+          controls.setLookAt(...cmd.setLookAt, enable_transition);
+        }
+      }
+    }
     if ("add_animation" in msg) {
       let cmd = msg.add_animation;
       console.log("Adding Animation Clip with name", cmd.name);
@@ -284,7 +296,7 @@ export default class Connection {
     }
   }
 
-  loadGLTF(path, name, parent) {
+  loadGLTF(path, name, parent, callback = null) {
     const loader = this.viz.loaders.gltf;
     loader.load(
       path,
@@ -298,6 +310,9 @@ export default class Connection {
         if (parent && this.viz.objects[parent]) {
           console.log(`Adding GLTF ${name} to ${parent}`)
           this.viz.objects[parent].add(obj);
+        }
+        if (callback) {
+          callback(obj)
         }
         this.viz.setUpdate();
       },

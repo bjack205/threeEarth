@@ -33,6 +33,16 @@ class Visualizer:
     async def add_child(self, parent_name: str, child_name: str):
         await self._send_message("add_child", {"parent_name": parent_name, "child_name": child_name})
 
+    async def camera_controls(self, controls_name: str, position: list = None, target: list = None, enable_transition: bool = False):
+        data = {"controls_name": controls_name, "enable_transition": enable_transition}
+        if position is not None and target is not None:
+            data["setLookAt"] = (position + target)  # [px, py, pz, tx, ty, tz]
+        elif position is not None:
+            data["setPosition"] = position
+        elif target is not None:
+            data["setTarget"] = target
+        await self._send_message("camera_controls", data)
 
     async def _send_message(self, msg_name: str, data: dict):
         await self.server.send_message({msg_name: data})
+
