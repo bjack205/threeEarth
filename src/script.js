@@ -18,7 +18,8 @@ const connection = new Connection(viz, 'ws://localhost:8001');
 // Earth
 const radius = viz.earth.getEarthRadius();
 console.log("Earth radius: ", radius);
-cameraControls.setLookAt(15000, 0, 0, 7000, 0, 0);
+cameraControls.setLookAt(15000, 0, 0, 0, 0, 0);
+viz.world.add(new THREE.AxesHelper(radius * 1.5));
 
 // Set up scene
 const test_scene = false;

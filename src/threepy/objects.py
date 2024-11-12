@@ -74,3 +74,21 @@ class GLTF(Object3D):
         object_data = Object3D.lower(self)
         object_data["path"] = self.path
         return object_data
+
+
+class Camera(Object3D):
+    def __init__(self, **kwargs):
+        super().__init__("Camera", **kwargs)
+        self.fov = 75
+        self.aspect = 1
+        self.near = 0.1
+        self.far = 1000
+
+
+    def lower(self):
+        object_data = Object3D.lower(self)
+        object_data["fov"] = self.fov
+        object_data["aspect"] = self.aspect
+        object_data["near"] = self.near
+        object_data["far"] = self.far
+        return object_data

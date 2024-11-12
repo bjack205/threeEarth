@@ -112,6 +112,23 @@ export default class Connection {
       } else if (object_type == "GLTF") {
         console.log("Adding GLTF with name ", name);
         this.loadGLTF(cmd.path, name, cmd);
+      } else if (object_type == "Camera") {
+        console.log("Adding camera with name", name)
+        const camera = new THREE.PerspectiveCamera();
+        camera.name = name;
+        if ("near" in cmd) {
+          camera.near = cmd.near
+        }
+        if ("far" in cmd) {
+          camera.far = cmd.far
+        }
+        if ("fov" in cmd) {
+          camera.fov = cmd.fov
+        }
+        if ("aspect" in cmd) {
+          camera.aspect = cmd.aspect
+        }
+        this.viz.objects[name] = camera;
       }
     }
     if ("camera_controls" in msg) {
@@ -205,6 +222,11 @@ export default class Connection {
       }
       if ("scale" in props) {
         object.scale.fromArray(props.scale)
+      }
+      if ("near" in props) {
+        console.log("Setting near")
+        object.near = props.near;
+        object.updateProjectionMatrix();
       }
       this.viz.setUpdate();
 
@@ -306,6 +328,7 @@ export default class Connection {
         // satelliteGroup.add(gltf.scene)
         // satControls.fitToSphere(satModel)
         const obj = gltf.scene;
+        obj.name = name;
         this.viz.objects[name] = obj;
         if (parent && this.viz.objects[parent]) {
           console.log(`Adding GLTF ${name} to ${parent}`)

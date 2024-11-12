@@ -51,6 +51,7 @@ export default class Visualizer {
         const far = 40000
         this.cameraGroup = new THREE.Group()
         this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far)
+        this.camera.name = "camera"
         this.cameraInit(this.camera)
         this.cameraDebug(this.camera)
 
@@ -169,7 +170,7 @@ export default class Visualizer {
             camera.updateProjectionMatrix();
             this._needs_update = true;
         })
-        cameraDebug.add(camera, 'near').min(1).max(2000).step(1).name('Near').onFinishChange(() => {
+        cameraDebug.add(camera, 'near').min(1e-5).max(2000).step(1).name('Near').onFinishChange(() => {
             camera.updateProjectionMatrix();
             this._needs_update = true;
         })
