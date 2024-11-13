@@ -1,13 +1,13 @@
 import * as THREE from 'three'
-import { ObjectLoader } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/Addons.js'
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
+import {ObjectLoader} from 'three';
+import {GLTFLoader} from 'three/examples/jsm/Addons.js'
+import {GUI} from 'three/addons/libs/lil-gui.module.min.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import CameraControls from 'camera-controls'
 import Earth from './Earth'
 import VizTools from './VizTools'
 
-CameraControls.install({ THREE: THREE })
+CameraControls.install({THREE: THREE})
 
 export default class Visualizer {
     constructor(canvas = document.querySelector('canvas.webgl'), shadows = false) {
@@ -54,6 +54,7 @@ export default class Visualizer {
         this.camera.name = "camera"
         this.cameraInit(this.camera)
         this.cameraDebug(this.camera)
+        this.scene.add(this.camera)
 
         // Controls
         // this.controls = new OrbitControls(this.camera, this.canvas)
@@ -97,7 +98,7 @@ export default class Visualizer {
         // this.earthGroup.rotateY(Math.PI / 2)
 
         this.earth = new Earth(this.scene, this.gui, this)
-        this.earth.addEarth(this.earthGroup, {})
+        this.earth.addEarth(this.earthGroup, {color: 'colorLarge', stars: 'stars8k', clouds: 'clouds2k', lights: 'nightlights4k'})
         this.world.add(this.earthGroup)
         this.world.position.set(0, 0, 0)
         this.scene.add(this.world)
@@ -121,7 +122,7 @@ export default class Visualizer {
     }
 
     getActiveCamera() {
-        return { camera: this.camera, controls: this.controls }
+        return {camera: this.camera, controls: this.controls}
     }
 
     resize() {
@@ -161,11 +162,11 @@ export default class Visualizer {
         camera.position.z = 0
         camera.lookAt(0, 0, 0)
         camera.up.set(0, 0, 1)
-        this.scene.add(camera)
+        // this.scene.add(camera)
     }
 
     cameraDebug(camera) {
-        const cameraDebug = this.gui.addFolder('Camera')
+        const cameraDebug = this.gui.addFolder(`Camera: ${camera.name}`)
         cameraDebug.add(camera, 'fov').min(1).max(180).step(1).name('FOV').onFinishChange(() => {
             camera.updateProjectionMatrix();
             this._needs_update = true;
@@ -180,6 +181,19 @@ export default class Visualizer {
         })
     }
 
+    changeCamera(camera_name) {
+        const camera = this.getObject(camera_name);
+        if (!camera) {
+            console.log(`Camera '${camera_name}' not found.`)
+            return null;
+        }
+        this.camera = camera;
+        this.controls.dispose();
+        this.controls = new CameraControls(this.camera, this.canvas);
+        this.controls.enableDamping = true;
+        this.resize();
+    }
+
     lightsInit(ambientLight, directionalLight) {
         directionalLight.position.set(0, 0, 30)
         this.scene.add(ambientLight)
@@ -188,7 +202,9 @@ export default class Visualizer {
 
     lightsDebug(ambientLight, directionalLight) {
         const lightsDebug = this.gui.addFolder('Lights')
-        const update = () => { this.setUpdate(); }
+        const update = () => {
+            this.setUpdate();
+        }
         lightsDebug.add(ambientLight, 'intensity').min(0).max(1).step(0.01).name('Ambient Intensity').onChange(update)
         lightsDebug.add(directionalLight, 'intensity').min(0).max(10).step(0.01).name('Sun Intensity').onChange(update)
         lightsDebug.add(directionalLight.position, 'x').min(-100).max(100).step(0.1).name('Sun X').onChange(update)
@@ -207,7 +223,7 @@ export default class Visualizer {
         animDebug.add(this.active_action, 'stop')
         animDebug.add(this.active_action, 'paused')
         animDebug.add(this.active_action, 'enabled')
-        animDebug.add(this.active_action, 'timeScale').min(-2).max(5).step(0.1)
+        animDebug.add(this.active_action, 'timeScale').min(-100).max(100).step(0.1)
         this.animation_debug = animDebug
         this.time_controller = animDebug.add(this.active_action, 'time').min(0).max(this.active_action.getClip().duration).step(0.1)
     }
@@ -241,6 +257,20 @@ export default class Visualizer {
         return null
     }
 
+    addObject(name, object) {
+        if (name in this.objects) {
+            const obj_old = this.objects[name];
+            if (obj_old.hasOwnProperty('destroy')) {
+                obj_old.destroy();
+            } else if (obj_old.hasOwnProperty('dispose')) {
+                obj_old.dispose();
+            }
+        }
+        object.name = name;
+        this.objects[name] = object;
+    }
+
+
     loadAnimation(clip, object = this.scene) {
         if (clip && object) {
             // Uncache previous action
@@ -259,7 +289,9 @@ export default class Visualizer {
         return null
     }
 
-    setUpdate() { this._needs_update = true; }
+    setUpdate() {
+        this._needs_update = true;
+    }
 
     run() {
         this.controls.update();
@@ -278,7 +310,9 @@ export default class Visualizer {
         if (this.earth) {
             const camera = this.getActiveCamera().camera
             const uniforms = this.earth.uniforms
-            const cameraHeight = camera.position.length()
+            const camera_position_world = new THREE.Vector3()
+            camera.getWorldPosition(camera_position_world);
+            const cameraHeight = camera_position_world.length()
             let earthPosition = new THREE.Vector3()
             this.earth.groundMesh.getWorldPosition(earthPosition)
 
@@ -308,7 +342,9 @@ export default class Visualizer {
         // Stats
         this.stats.update()
 
-        window.requestAnimationFrame(() => { this.update() })
+        window.requestAnimationFrame(() => {
+            this.update()
+        })
 
     }
 }

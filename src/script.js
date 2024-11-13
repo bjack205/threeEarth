@@ -17,9 +17,36 @@ const connection = new Connection(viz, 'ws://localhost:8001');
 
 // Earth
 const radius = viz.earth.getEarthRadius();
+// viz.earth.setClouds('clouds2k');
+// viz.earth.setEarthNightlights('nightlights4k');
+// viz.earth.setEarthColor('colorLarge');
+// viz.earth.setStars('stars8k');
 console.log("Earth radius: ", radius);
 cameraControls.setLookAt(15000, 0, 0, 0, 0, 0);
-viz.world.add(new THREE.AxesHelper(radius * 1.5));
+viz.scene.add(new THREE.AxesHelper(radius * 1.5));
+viz.directionalLight.position.set(1000, 1000, 0);
+
+// Satellite
+const params = {
+  scale: 100,
+  alt: 400,
+  camera_dist: 10,
+}
+const scale = 100;
+const satellite = new THREE.Group();
+let model;
+viz.scene.add(satellite);
+satellite.position.set(radius + params.alt, 0, 0);
+viz.addObject('satellite', satellite);
+connection.loadGLTF('albedo-sat-simple.glb', 'satellite_model', 'satellite', (obj) => {
+  console.log("Satellite model loaded!")
+  model = obj;
+  // viz.controls.fitToSphere(obj);
+});
+viz.addObject('sat_frame', new THREE.AxesHelper(2.0));
+satellite.add(viz.getObject('sat_frame'));
+viz.controls.setLookAt(radius + params.alt + params.camera_dist * params.scale, 800, 200, ...satellite.position);
+satellite.scale.set(100, 100, 100);
 
 // Set up scene
 const test_scene = false;
@@ -58,8 +85,6 @@ if (test_scene) {
   floor.receiveShadow = use_shadows;
   scene.add(floor);
 
-  // GLTF Model
-  connection.loadGLTF('albedo-sat-simple.glb', 'satellite', 'scene');
 }
 
 // // Animation system
@@ -97,3 +122,4 @@ globalThis.THREE = THREE;
 globalThis.camera = viz.camera;
 globalThis.cameraControls = viz.controls;
 globalThis.viz = viz;
+globalThis.satellite = satellite;
