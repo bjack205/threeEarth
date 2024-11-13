@@ -15,7 +15,7 @@ class KeyframeTrack:
         times,
         values,
         interpolation: Interpolation = Interpolation.InterpolateLinear,
-        value_type = "number",
+        value_type="number",
     ):
         self.name = name
         self.times = times

@@ -13,6 +13,7 @@ import websockets.legacy
 import websockets.legacy.server
 import websockets
 
+
 class ThreeServer:
 
     def __init__(self, port=8011):
@@ -24,12 +25,10 @@ class ThreeServer:
         async for msg in websocket:
             print(msg)
 
-
     async def connection(self, websocket):
         print("New Connection")
         async for msg in websocket:
             print(msg)
-
 
     async def handler(self, websocket):
         # Initialization
@@ -46,7 +45,6 @@ class ThreeServer:
 
         print("Socket handler finished")
         self.connections.pop()
-
 
     async def run_server(self):
         async with websockets.serve(self.handler, "localhost", self.port):

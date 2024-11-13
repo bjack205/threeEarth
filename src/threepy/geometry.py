@@ -20,7 +20,7 @@ class SphereGeometry(BufferGeometry):
         phi_length: float = 2 * math.pi,
         theta_start: float = 0.0,
         theta_length=math.pi,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.radius = radius
@@ -81,7 +81,7 @@ class CylinderGeometry(BufferGeometry):
         openEnded: bool = False,
         thetaStart: float = 0,
         thetaLength: float = 2 * math.pi,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.radiusTop = radiusTop
@@ -140,8 +140,6 @@ class ConeGeometry(CylinderGeometry):
         cylinder_json["radius"] = self.radiusBottom
         cylinder_json.pop("radiusTop")
         return cylinder_json
-
-
 
 
 # class Mesh(Object):

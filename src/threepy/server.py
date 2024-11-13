@@ -4,6 +4,7 @@ import json
 from websockets.asyncio.server import serve
 import logging
 
+
 class WebsocketServer:
     def __init__(self):
         self.connections = []

@@ -1,5 +1,6 @@
 from threepy.core import SceneElement
 
+
 class Material(SceneElement):
     def __init__(self, name=None):
         super().__init__(name)

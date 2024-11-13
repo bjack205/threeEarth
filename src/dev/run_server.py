@@ -1,10 +1,8 @@
-
 import asyncio
 import websockets
 
 
 print("Hello World")
-
 
 
 # %% Set the position

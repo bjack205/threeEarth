@@ -49,8 +49,9 @@ class SimpleMesh(Object3D):
         object_data["material"] = self.material.lower()
         return object_data
 
+
 class SimpleMeshRef(Object3D):
-    def __init__(self, geometry_name : str, material_name : str, **kwargs):
+    def __init__(self, geometry_name: str, material_name: str, **kwargs):
         super().__init__("SimpleMeshRef", **kwargs)
         if not isinstance(geometry_name, str):
             raise ValueError("geometry_name must be a string")
@@ -64,6 +65,7 @@ class SimpleMeshRef(Object3D):
         object_data["geometry_name"] = self.geometry_name
         object_data["material_name"] = self.material_name
         return object_data
+
 
 class GLTF(Object3D):
     def __init__(self, path: str, **kwargs):
@@ -83,7 +85,6 @@ class Camera(Object3D):
         self.aspect = 1
         self.near = 0.1
         self.far = 1000
-
 
     def lower(self):
         object_data = Object3D.lower(self)
