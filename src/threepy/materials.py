@@ -1,4 +1,5 @@
 from threepy.core import SceneElement
+import enum
 
 
 class Material(SceneElement):
@@ -29,6 +30,12 @@ class Material(SceneElement):
 
 
 class MeshLambertMaterial(Material):
-    def __init__(self, color: int = 255, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._properties |= {"color": color, "type": "MeshLambertMaterial"}
+    def __init__(self, color: int = 255, name=None, **kwargs) -> None:
+        super().__init__(name=name)
+        self._properties |= {"color": color, "type": "MeshLambertMaterial", **kwargs}
+
+
+class MatSide(enum.Enum):
+    FrontSide = 0
+    BackSide = 1
+    DoubleSide = 2

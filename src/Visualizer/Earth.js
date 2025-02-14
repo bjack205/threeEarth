@@ -304,11 +304,11 @@ export default class Earth {
         folder.add(this.clouds, 'name').options(Object.keys(this.textures.clouds)).name('Clouds').onFinishChange((value) => {
             this.setClouds(value)
         })
+        folder.close()
 
-        // folder.add(this, 'cloudScale').min(0).max(5).step(0.1).onChange((scale) => {
-        //     const cloudScale = scale / 100.0 + 1.0
-        //     this.cloudMesh.scale.setScalar(cloudScale)
-        // })
+    }
+
+    addAtmoDebug(folder) {
 
         const atmoFolder = folder.addFolder('Atmosphere')
         const atmosphere = this.atmosphere

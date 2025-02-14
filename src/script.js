@@ -33,10 +33,13 @@ const params = {
   camera_dist: 10,
 }
 const scale = 100;
-const satellite = new THREE.Group();
+const satellite_ECI = new THREE.Group();  // control the ECI position, but maintain ECI axes
+const satellite = new THREE.Group();      // set the oriention wrt ECI frame, position should remain 0, 0, 0 wrt satellite_ECI frame
 let model;
-viz.scene.add(satellite);
-satellite.position.set(radius + params.alt, 0, 0);
+viz.scene.add(satellite_ECI);
+satellite_ECI.add(satellite);
+satellite_ECI.position.set(radius + params.alt, 0, 0);
+viz.addObject('satellite_ECI', satellite_ECI)
 viz.addObject('satellite', satellite);
 connection.loadGLTF('albedo-sat-simple.glb', 'satellite_model', 'satellite', (obj) => {
   console.log("Satellite model loaded!")
@@ -86,6 +89,22 @@ if (test_scene) {
   scene.add(floor);
 
 }
+
+// Add Camera controls
+// viz.controls.fitToBox(model);
+const controlButtons = {
+  fitToSatellite: function () {
+    const satellite_box = new THREE.Box3().setFromObject(viz.objects.satellite_model);
+    viz.controls.fitToBox(satellite_box, 1);
+  },
+  fitToWorld: function () {
+
+    viz.controls.fitToSphere(viz.earth.groundGeometry.boundingSphere, 1);
+  },
+}
+viz.gui.add(controlButtons, 'fitToSatellite');
+viz.gui.add(controlButtons, 'fitToWorld');
+
 
 // // Animation system
 // THREE.InterpolateSmooth

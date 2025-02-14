@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import {ObjectLoader, MaterialLoader, BufferGeometryLoader} from 'three';
+import { ObjectLoader, MaterialLoader, BufferGeometryLoader } from 'three';
 import * as Geometries from 'three/src/geometries/Geometries.js';
 
 export class SimpleConnection {
@@ -15,7 +15,7 @@ export class SimpleConnection {
         this.websocket = new WebSocket(url)
         this.websocket.onopen = () => {
             console.log("Connected to the server");
-            let event = {type: "init", client: "visualizer"};
+            let event = { type: "init", client: "visualizer" };
             this.websocket.send(JSON.stringify(event));
         }
         this.websocket.onmessage = (e) => {
@@ -53,7 +53,7 @@ export default class Connection {
         this.websocket = new WebSocket(url)
         this.websocket.onopen = () => {
             console.log("Connected to the server");
-            let event = {type: "init", client: "visualizer"};
+            let event = { type: "init", client: "visualizer" };
             this.websocket.send(JSON.stringify(event));
         }
         this.websocket.onmessage = (e) => {
@@ -133,18 +133,25 @@ export default class Connection {
                     camera.aspect = cmd.aspect
                 }
                 this.viz.addObject(name, camera);
+            } else if (object_type == "Group") {
+                console.log("Adding Group with name ", name)
+                const group = new THREE.Group()
+                this.viz.addObject(name, group)
             }
         }
         if ("camera_controls" in msg) {
+            console.log("Got Camera Controls command")
             let cmd = msg.camera_controls;
             const controls_name = cmd.controls_name;
             const controls = this.viz.getObject(controls_name);
             const enable_transition = cmd.enable_transition;
-            if (camera) {
+            if (controls) {
                 if ("setLookAt" in cmd) {
                     console.log("Setting LookAt")
                     controls.setLookAt(...cmd.setLookAt, enable_transition);
                 }
+            } else {
+                console.log("Couldn't find controls with name ", cmd.control_name)
             }
         }
         if ("add_animation" in msg) {
@@ -255,7 +262,12 @@ export default class Connection {
             if ("opacity" in props && material) {
                 console.log("Setting opacity")
                 material.opacity = props.opacity;
-                material.needsUpdate = true
+                material.needsUpdate = true;
+                this.viz.setUpdate();
+            }
+            if ("visible" in props) {
+                console.log("Setting visibility")
+                object.visible = props.visible;
                 this.viz.setUpdate();
             }
         }

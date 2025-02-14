@@ -1,13 +1,13 @@
 import * as THREE from 'three'
-import {ObjectLoader} from 'three';
-import {GLTFLoader} from 'three/examples/jsm/Addons.js'
-import {GUI} from 'three/addons/libs/lil-gui.module.min.js'
+import { ObjectLoader } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import CameraControls from 'camera-controls'
 import Earth from './Earth'
 import VizTools from './VizTools'
 
-CameraControls.install({THREE: THREE})
+CameraControls.install({ THREE: THREE })
 
 export default class Visualizer {
     constructor(canvas = document.querySelector('canvas.webgl'), shadows = false) {
@@ -74,10 +74,23 @@ export default class Visualizer {
         this.animation_debug = null
         this.time_controller = null
 
+        // Earth
+        this.world = new THREE.Group()
+        this.earthGroup = new THREE.Group()
+        // this.earthGroup.rotateY(Math.PI / 2)
+
+        this.earth = new Earth(this.scene, this.gui, this)
+        this.earth.addEarth(this.earthGroup, { color: 'colorLarge', stars: 'stars8k', clouds: 'clouds2k', lights: 'nightlights4k' })
+        this.world.add(this.earthGroup)
+        this.world.position.set(0, 0, 0)
+        this.scene.add(this.world)
+        this.earthGroup.rotateX(Math.PI / 2)
+
         // Object Cache
         this.objects = {
             "controls": this.controls,
             "earth": this.earthGroup,
+            "world": this.world,
             "camera": this.camera,
             "ambientLight": this.ambientLight,
             "directionalLight": this.directionalLight,
@@ -92,17 +105,6 @@ export default class Visualizer {
         }
 
 
-        // Earth
-        this.world = new THREE.Group()
-        this.earthGroup = new THREE.Group()
-        // this.earthGroup.rotateY(Math.PI / 2)
-
-        this.earth = new Earth(this.scene, this.gui, this)
-        this.earth.addEarth(this.earthGroup, {color: 'colorLarge', stars: 'stars8k', clouds: 'clouds2k', lights: 'nightlights4k'})
-        this.world.add(this.earthGroup)
-        this.world.position.set(0, 0, 0)
-        this.scene.add(this.world)
-        this.world.rotateX(Math.PI / 2)
 
         // Debug
         return
@@ -122,7 +124,7 @@ export default class Visualizer {
     }
 
     getActiveCamera() {
-        return {camera: this.camera, controls: this.controls}
+        return { camera: this.camera, controls: this.controls }
     }
 
     resize() {
@@ -179,6 +181,7 @@ export default class Visualizer {
             camera.updateProjectionMatrix();
             this._needs_update = true;
         })
+        cameraDebug.close();
     }
 
     changeCamera(camera_name) {
@@ -207,9 +210,10 @@ export default class Visualizer {
         }
         lightsDebug.add(ambientLight, 'intensity').min(0).max(1).step(0.01).name('Ambient Intensity').onChange(update)
         lightsDebug.add(directionalLight, 'intensity').min(0).max(10).step(0.01).name('Sun Intensity').onChange(update)
-        lightsDebug.add(directionalLight.position, 'x').min(-100).max(100).step(0.1).name('Sun X').onChange(update)
-        lightsDebug.add(directionalLight.position, 'y').min(-100).max(100).step(0.1).name('Sun Y').onChange(update)
-        lightsDebug.add(directionalLight.position, 'z').min(-100).max(100).step(0.1).name('Sun Z').onChange(update)
+        // lightsDebug.add(directionalLight.position, 'x').min(-100).max(100).step(0.1).name('Sun X').onChange(update)
+        // lightsDebug.add(directionalLight.position, 'y').min(-100).max(100).step(0.1).name('Sun Y').onChange(update)
+        // lightsDebug.add(directionalLight.position, 'z').min(-100).max(100).step(0.1).name('Sun Z').onChange(update)
+        lightsDebug.close();
     }
 
     animationDebug() {
